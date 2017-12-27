@@ -1,0 +1,9 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+.wrapper { max-width: -webkit-calc(1000px - (30px * 2)); max-width: calc(1000px - (30px * 2)); }
+@media screen and (max-width: 1000px) {
+  .wrapper { max-width: -webkit-calc(1000px - (30px)); max-width: calc(1000px - (30px)); }
+  }

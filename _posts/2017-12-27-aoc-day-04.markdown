@@ -1,0 +1,201 @@
+---
+layout: post
+title:  "Advent of Code 2017, Day 04"
+date:   2017-12-27 08:00:00 +0000
+categories: aoc tutorial
+---
+
+# Day 4 High-Entropy Passphrases
+
+>A passphrase consists of a series of words (lowercase letters) separated by spaces. To ensure security, a valid passphrase **must contain no duplicate words**.
+
+We need to check each list of words and discover whether any word has been repeated. One way to do this is to count how many *unique* words there are in each list, and compare that with the total number of words in the list; if the count differs then there is at least one duplicated word.
+
+## Solving Part 1
+
+With that in mind, let's fire up a Q session and setup the three example as variables `a`, `b` and `c` respectively.
+
+```q
+q)a:("aa";"bb";"cc";"dd";"ee")
+q)b:("aa";"bb";"cc";"dd";"aa")
+q)c:("aa";"bb";"cc";"dd";"aaa")
+```
+
+Let's count the lengths of these lists
+
+```q
+q)count a
+5
+q)count b
+5
+q)count c
+5
+```
+
+In order to remove duplicates from a list, we can use the Q keyword `distinct`
+
+```q
+q)distinct a
+"aa"
+"bb"
+"cc"
+"dd"
+"ee"
+q)distinct b
+"aa"
+"bb"
+"cc"
+"dd"
+q)distinct c
+"aa"
+"bb"
+"cc"
+"dd"
+"aaa"
+```
+
+From a quick glance it's clear that `b` only has `4` items in it, but let's make it even clearer:
+
+```q
+q)count distinct a
+5
+q)count distinct b
+4
+q)count distinct c
+5
+```
+
+Rewriting this as an anonymous function and running against each example:
+
+```q
+q){count distinct x} a
+5
+q){count distinct x} b
+4
+q){count distinct x} c
+5
+```
+
+Now we can compare the length of the unique list with the length of the original list:
+
+```q
+q){(count distinct x)=count x} a
+1b
+q){(count distinct x)=count x} b
+0b
+q){(count distinct x)=count x} c
+1b
+```
+
+Now that we can check whether a given input is a valid passphrase, we can look at our input file and work towards getting today's first star.
+
+```q
+q)read0 `:input/04.txt
+"oaoe rxeq vssdqtu xrk cjv yaoqp loo"
+"mveua dogbam szydvri hyzk lbega abzqw xwjn wniug kwbre"
+"npaoy uivpxwd oynpa rcdk uixpvdw"
+"yserir iikzcm ieuroca iuwcfov rvb giti crdpdcv mxpps"
+..
+```
+
+Each line of the input contains a list of words separated by a single space, `" "`, we therefore need to use `vs` to split these lines into lists of words. Like **Day 02**, we can work on the `first` line.
+
+```q
+q)" " vs first read0 `:input/04.txt
+"oaoe"
+"rxeq"
+"vssdqtu"
+"xrk"
+"cjv"
+"yaoqp"
+"loo"
+```
+
+... and similarly per **Day 02**, we need to either wrap this in brackets, or use each-both when running against the whole input file:
+
+```q
+q)(" " vs) each read0 `:input/04.txt
+("oaoe";"rxeq";"vssdqtu";"xrk";"cjv";"yaoqp";"loo")
+("mveua";"dogbam";"szydvri";"hyzk";"lbega";"abzqw";"xwjn";"wniug";"kwbre")
+("npaoy";"uivpxwd";"oynpa";"rcdk";"uixpvdw")
+("yserir";"iikzcm";"ieuroca";"iuwcfov";"rvb";"giti";"crdpdcv";"mxpps")
+..
+```
+
+Now we can use our earlier code against each parsed line of the input file
+
+```q
+q){(count distinct x)=count x} each (" " vs) each read0 `:input/04.txt
+111111101000111110111111010111111001111001001111110101011110101101011111001110111110110111111111111111110010101111110100101100111111111011011111011100111111111111011110011101111111111111110111100010101010101101101010011111001101110011111..
+```
+
+... and if we sum up this boolean list, we get the total count of valid passphrases, and our first star!
+
+```q
+q)sum {(count distinct x)=count x} each (" " vs) each read0 `:input/04.txt
+386i
+```
+
+## Solving Part 2
+
+> Now, a **valid passphrase must contain no two words that are anagrams of each other** - that is, a passphrase is invalid if any word's letters can be rearranged to form any other word in the passphrase.
+
+One approach to solving this, would be to create permutations of each word in each list, and see whether there are multiple instances, but a more simple way, is to sort each word, and then apply the `distinct` operator like in **Part 1**.
+
+The operator `asc` is used to sort a list into ascending order, however if we apply this to the examples, it will sort the list itself, rather than sorting each word in the list.
+
+```q
+q)asc ("abcde";"xyz";"ecdab")
+"abcde"
+"ecdab"
+"xyz"
+```
+
+We therefore need to use the `each` operator to decend into the list and sort each item:
+
+```q
+q)asc each ("abcde";"xyz";"ecdab")
+`s#"abcde"
+`s#"xyz"
+`s#"abcde"
+```
+
+Note the `` `s# `` attribute has been applied to each item to signify that the item is sorted.
+
+Applying `distinct` to this list will remove the duplicate value
+
+```q
+q)distinct asc each ("abcde";"xyz";"ecdab")
+`s#"abcde"
+`s#"xyz"
+```
+
+Converting this into a function is straightforward:
+
+```q
+q){ distinct asc each x}("abcde";"xyz";"ecdab")
+`s#"abcde"
+`s#"xyz"
+```
+
+We can then reuse the same code as **Part 1** to give us the following function
+
+```q
+{ (count x)=count distinct asc each x }
+```
+
+Feeding in each line of our parsed input will give us the boolean list of valid passphrases, which we can sum up to get our second star
+
+```q
+q){ (count x)=count distinct asc each x } each (" " vs) each read0 `:input/04.txt
+110101001000111010110011000101000001101001000110010001001000000001000101001000111010100011100100100110010000001110110000100000010111011010000110000000010001110010011010000101101010000110110011100000100010101000100000010010001101010011101..
+q)sum { (count x)=count distinct asc each x } each (" " vs) each read0 `:input/04.txt
+208i
+```
+
+
+My full solution for **Day 4** is below:
+```q
+sum { (count distinct x)=count x } each r:" "vs'read0 `:input/04.txt
+sum { (count x)=count distinct asc each x } each r
+```

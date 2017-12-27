@@ -18,7 +18,7 @@ email: mkst@protonmail.om
 description: >- # this means to ignore newlines until "baseurl:"
   A collection of blog posts explaining how I tackled various code challenges in q/kdb+.
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://streetster.github.io/" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: themarkstreet
 github_username:  streetster
 
