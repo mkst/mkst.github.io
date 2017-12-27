@@ -1,0 +1,452 @@
+---
+layout: post
+title:  "Advent of Code 2017, Day 02"
+date:   2017-12-27 08:00:00 +0000
+categories: aoc tutorial
+---
+
+# Day 2: Corruption Checksum
+
+> The spreadsheet consists of rows of apparently-random numbers. To make sure the recovery process is on the right track, they need you to calculate the spreadsheet's checksum. For each row, **determine the difference between the largest value and the smallest value**; the checksum is the **sum of all of these differences**.
+
+For each row of numbers in the input file, we need to identify the largest and smallest numbers and then subtract the smallest from largest. We then need to sum up these results.
+
+## Solving Part 1
+
+As before, let's start with the examples. The first row in the example is `5 1 9 5`. It's quite easy to tell that the largest number is `9` and the smallest is the `1`, and that `9 - 1` is `8`. Or, to say it another way, the *maximum* number in the list is `9`, and the *minimum* number in the list is `1`.
+
+That should be enough to get us coding a solution. Let's fire up a Q session and save the list `5 1 9 5` as variable `a`:
+
+```q
+KDB+ 3.5 2017.11.30 Copyright (C) 1993-2017 Kx Systems
+l32/ 4()core 3635MB mark carbon 127.0.1.1 NONEXPIRE
+
+q)a:5 1 9 5 / be sure to leave a space between each number
+q)count a / we can double-check by counting the length of the list
+4
+```
+
+Now let's use the `max` and `min` operators on `a`:
+
+```q
+q)max a
+9
+q)min a
+1
+```
+
+If we want to subtract `min a` from `max a` we need to use some brackets. This is because Q is interpreted right-to-left it consumes whatever the next piece is, even if there's more to the left of it. Usually this will result in an error, *however* in this case, if we just write the commands out as below, we actually get the correct answer of `8`!
+
+```q
+q)max a - min a
+8
+```
+
+In order to find out what is going on (or rather how are we getting the correct result) we need to break down each operation:
+
+```q
+q)a - 1 / subtract 1 from each item in the list a
+4 0 8 4
+q)max 4 0 8 4 / take the maximum of this list
+8
+```
+
+Now, whilst this gives us the correct result, we are doing extra work that we dont need to be doing - we are subtracting the minimum number from every number in the list, and then taking the maximum. We just want to subtract two individual numbers from one another, therefore we wrap `max a` in brackets so that the `min a` is subtracted from the *result* of `max a`:
+
+```q
+q)(max a) - min a / subtract the min of a (1) from the max of a (9)
+8
+q)max[a] - min a / alternatively we can use square brackets
+8
+q)max[a] - min[a] / we could also use square brackets for the min, but it's not necessary
+8
+```
+
+Now that we have the basic building blocks we can turn this snippet into a function that will calculate the difference between biggest and smallest items in a list for *any* list of numbers we give it. A few fun facts about Q functions:
+
+ - Functions in Q use the curly braces `{` and `}` to signify the start and end.
+ - Functions in Q can take up to 3 arguments without needing to name them, or up to 8 arguments if explicitly named.
+ - Arguments are declared within square brackets `[` and `]`, separated by semicolons as needed.
+ - The implicit arguments are named `x`, `y` and `z`, and should be used in this order.
+
+A simple function that adds `1` to the input can be written as follows:
+
+```q
+q) {[INPUT] INPUT + 1 }
+q) {[x] x + 1 }
+q) { x + 1 }
+```
+
+We can try out these (anonymous) functions in place:
+
+```q
+q){[x] x + 1 } 5
+6
+```
+
+Or we can assign the function to a variable, and then use it like so:
+
+```q
+q)f:{[x] x + 1 }
+q)f 5
+6
+```
+
+Anyhow... to turn our code into a function we need to wrap it in brackets, and change the `a` for an `x` to signify that we want to be working with the argument to the function, rather than our list called `a`:
+
+```q
+q){ (max x) - min x }
+{ (max x) - min x }
+```
+
+Let's test it out with the examples:
+
+```q
+q){ (max x) - min x } 5 1 9 5
+8
+q){ (max x) - min x } 7 5 3
+4
+q){ (max x) - min x } 2 4 6 8
+6
+```
+
+So far, so good, however we want to run this function against *each row* of the spreadsheet (and then sum up all of these differences).
+
+Q provides a way to do this with the `each` operator.
+
+First build a list-of-lists with the numbers in the example:
+
+```q
+q)a:(5 1 9 5;7 5 3;2 4 6 8) / we need to use brackets and semicolons to build up this list of lists
+q)a / double-check that it looks as we expect
+5 1 9 5
+7 5 3
+2 4 6 8
+```
+
+We can then apply our function to each list using `each`:
+
+```q
+q){ (max x) - min x } each a
+8 4 6
+```
+
+... and can then use `sum` like in **Day 01** to sum up the resulting differences:
+
+```q
+q)sum { (max x) - min x } each a
+18
+```
+
+Now that we have the code to solve **Part 1**, we need to apply it to our input file so that we can get the first star.
+
+As with **Day 01**, we use `read0` to read in the input file:
+
+```q
+q)read0 `:input/02.txt
+"3093\t749\t3469\t142\t2049\t3537\t1596\t3035\t2424\t3982\t3290\t125\t249\t131\t118\t3138"
+"141\t677\t2705\t2404\t2887\t2860\t1123\t2714\t117\t1157\t2607\t1800\t153\t130\t1794\t3272"
+"182\t93\t2180\t114\t103\t1017\t95\t580\t2179\t2470\t2487\t2806\t1574\t1325\t1898\t1706"
+"3753\t233\t3961\t3747\t3479\t3597\t1303\t2612\t4043\t1815\t3318\t737\t197\t3943\t239\t254"
+..
+```
+
+Note that the numbers are separated by a tab (`\t`) not a space (` `).
+
+Let's start with the `first` row of the input:
+
+```q
+q)first read0 `:input/02.txt
+"3093\t749\t3469\t142\t2049\t3537\t1596\t3035\t2424\t3982\t3290\t125\t249\t131\t118\t3138"
+```
+
+We can use the `vs` operator to split up character lists on a particular character (or characters), in this case `"\t"`:
+
+```q
+q)"\t" vs first read0 `:input/02.txt
+"3093"
+"749"
+"3469"
+"142"
+"2049"
+"3537"
+"1596"
+"3035"
+"2424"
+"3982"
+"3290"
+"125"
+"249"
+"131"
+"118"
+"3138"
+```
+
+Next we can use the big-J casting to convert these numbers into longs:
+
+```q
+q)"J"$"\t" vs first read0 `:input/02.txt
+3093 749 3469 142 2049 3537 1596 3035 2424 3982 3290 125 249 131 118 3138
+```
+
+Now that we've got the code to parse the first line of the input file, we can switch out the `first` for an `each`. Unfortunately this gives us an error as Q is trying to apply the `vs` operator to each item in the list without the separator character `"\t"`.
+
+```q
+q)"J"$"\t" vs each read0 `:input/02.txt
+'
+  [0]  "J"$"\t" vs each read0 `:input/02.txt
+```
+
+There are two quick solutions to this:
+
+```q
+q)"J"$("\t" vs) each read0 `:input/02.txt / wrap brackets around the "\t" vs
+3093 749  3469 142  2049 3537 1596 3035 2424 3982 3290 125  249  131  118  3138
+141  677  2705 2404 2887 2860 1123 2714 117  1157 2607 1800 153  130  1794 3272
+182  93   2180 114  103  1017 95   580  2179 2470 2487 2806 1574 1325 1898 1706
+3753 233  3961 3747 3479 3597 1303 2612 4043 1815 3318 737  197  3943 239  254
+..
+q)"J"$"\t" vs ' read0 `:input/02.txt / or use the each-both operator '
+3093 749  3469 142  2049 3537 1596 3035 2424 3982 3290 125  249  131  118  3138
+141  677  2705 2404 2887 2860 1123 2714 117  1157 2607 1800 153  130  1794 3272
+182  93   2180 114  103  1017 95   580  2179 2470 2487 2806 1574 1325 1898 1706
+3753 233  3961 3747 3479 3597 1303 2612 4043 1815 3318 737  197  3943 239  254
+```
+
+With our input parsed, we can feed it into our function and unlock today's first star:
+
+```q
+q)sum { (max x) - min x } each "J"$"\t" vs ' read0 `:input/02.txt
+45351
+```
+
+## Solving Part 2
+
+> It sounds like the goal is to find the only **two numbers in each row where one evenly divides the other** - that is, where the result of the division operation is a whole number. They would like you to **find those numbers** on each line, **divide them**, and **add up each line's result**.
+
+If one number, a, divides into another, b, with no remainder, then we can say that `b modulo a == 0`. As Q is read right-to-left, then this would be transposed to `0 = b mod a`. The first example is `5 9 2 8`, where we can see that `2` will divide into `8` without remainder, and in our Q session:
+
+```q
+q)8 mod 2
+0
+q)0=8 mod 2
+1b
+```
+
+In order to find the result programatically, we can perform the modulo operation on each item in our list against the whole list and see where the result is zero. As we are performing modulo operation against each number, the matches will be where we find two results that are zero.
+
+We will use the each-right operator, `/:`, along with `mod`.
+
+```q
+q)5 9 2 8 mod/:5 9 2 8
+0 4 2 3
+5 0 2 8
+1 1 0 0
+5 1 2 0
+```
+
+Or as an anonymous function:
+
+```q
+q){ x mod/:x } 5 9 2 8
+0 4 2 3
+5 0 2 8
+1 1 0 0
+5 1 2 0
+```
+
+As we can see, there is one entry where there are two zeros in the list, this is made clearer if we add the `0=` condition to the function:
+
+```q
+q){ 0=x mod/:x } 5 9 2 8
+1000b
+0100b
+0011b <-- the third entry has two 1s
+0001b
+```
+
+If we use sum to count up the `1`s, we get the result below:
+
+```q
+q){ sum 0=x mod/:x } 5 9 2 8
+1 1 1 2i
+```
+
+This seems a little odd, but is due to the fact that the `sum` operation is being performed *down* the lists, rather than *across* each one.
+
+If we add the conditional check for the `sum` being equal to `2` we get:
+
+```q
+q){ 2=sum 0=x mod/:x } 5 9 2 8
+0001b
+q){ where 2=sum 0=x mod/:x } 5 9 2 8
+,3
+```
+
+Indexing back into the input list gives us one of the answers to the example, `8`:
+
+```q
+q){ x where 2=sum 0=x mod/:x } 5 9 2 8
+,8
+q){ x first where 2=sum 0=x mod/:x } 5 9 2 8 / where always returns a list, lets take the first
+8
+```
+
+If we look back, we know that the 3rd item in our list (index 2) is the other result. In order to sum across the list rather than down it we have two options. We can use the `each` operator such that `sum` is applied to each list, or we can use `flip` to rotate our results around, and then perform the same operations as before:
+
+```q
+q){ sum each 0=x mod/:x } 5 9 2 8 / we can use 'sum each'
+1 1 2 1i
+q){ flip 0=x mod/:x } 5 9 2 8
+1000b
+0100b
+0010b
+0011b
+q){ sum flip 0=x mod/:x } 5 9 2 8 / or 'sum flip'
+1 1 2 1i
+q){ 2=sum flip 0=x mod/:x } 5 9 2 8
+0010b
+q){ where 2=sum flip 0=x mod/:x } 5 9 2 8
+,2
+q){ x first where 2=sum flip 0=x mod/:x } 5 9 2 8
+2
+```
+
+If we combine these two operations and return the results as a list we can get the two numbers out:
+
+```q
+q){ (x first where 2=sum flip 0=x mod/:x;x first where 2=sum 0=x mod/:x) } 5 9 2 8
+2 8
+```
+
+This function can be simplified down by assigning the result of `0=x mod/:x` to a temporary variable, e.g. `a`, like so:
+
+```q
+q){ (x first where 2=sum flip a;x first where 2=sum a:0=x mod/:x) } 5 9 2 8
+2 8
+```
+
+We then want to divide the larger by the smaller, so let's move the `flip` so that we get the results in the opposite order:
+
+```q
+q){ (x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } 5 9 2 8
+8 2
+```
+
+Leveraging our knowledge from **Day 01**, we know that we can pass a *list* of arguments to a function using the `.` operator. If it's a built-in operator we need to wrap it in brackets. We want to divide these numbers, so we can use the divide operator, `%`, combined with `.`:
+
+```q
+q){ (%).(x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } 5 9 2 8
+4f
+```
+
+Verify that our solution produces the expected result with the example input:
+
+```q
+q)a:(5 9 2 8;9 4 7 3;3 8 6 5)
+q){ (%).(x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } each a
+4 3 2f
+q)sum { (%).(x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } each a
+9f
+```
+
+And then feed in the input file to get today's second star:
+
+```q
+q)sum { (%).(x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } each "J"$"\t" vs ' read0 `:input/02.txt
+275f
+```
+
+My full solution for **Day 02** is below, note that like **Day 01**, I'm saving the parsed input so that we do not have to read the input file again in **Part 2**.
+
+```q
+sum { (max x) - min x } each r:"J"$ "\t" vs'read0 `:input/02.txt
+sum { (%) . x (where 2=sum a),where 2=sum flip a:0=x mod/:x } each r
+```
+
+### Bonus
+
+Rather than performing the modulo operation on each list with each item in the list, we can create a list of distinct pairs to check so that we are not dividing numbers by themselves. In this particular case, it is actually slightly slower - but regardless let's crack on with building this list.
+
+We can combine the `except` operator with each-right `/:` to join each item of a list with the list excluding that item:
+
+```q
+q){x except/:x}5 9 2 8
+9 2 8
+5 2 8
+5 9 8
+5 9 2
+```
+
+We now need to join each item in the original list with each item in these sub lists:
+
+```q
+q){x,/:'x except/:x}5 9 2 8
+5 9 5 2 5 8
+9 5 9 2 9 8
+2 5 2 9 2 8
+8 5 8 9 8 2
+```
+
+And we can use `raze` to flatten each list into it's component pairs:
+
+```q
+q){raze x,/:'x except/:x}5 9 2 8
+5 9
+5 2
+5 8
+9 5
+9 2
+9 8
+2 5
+2 9
+2 8
+8 5
+8 9
+8 2
+```
+
+We now have a distinct list of combinations we can `mod` together in order to find the pair which divide into each other without remainder.
+
+```q
+q){(mod).'raze x,/:'x except/:x}5 9 2 8
+5 1 5 4 1 1 2 2 2 3 8 0
+```
+
+Using code from above we know we can find find the index where the result is 0
+
+```q
+q){0=(mod).'raze x,/:'x except/:x}5 9 2 8
+000000000001b
+q){where 0=(mod).'raze x,/:'x except/:x}5 9 2 8
+,11
+q){first where 0=(mod).'raze x,/:'x except/:x}5 9 2 8
+11
+```
+
+If we save the distinct list back into variable x, we can index into the distinct list at this index, and voila, we have our pair!
+
+```q
+q){x first where 0=(mod).'x:raze x,/:'x except/:x}5 9 2 8
+8 2
+```
+
+Feeding in our input file gives us:
+
+```q
+q){x first where 0=(mod).'x:raze x,/:'x except/:x} each "J"$ "\t" vs'read0 `:input/02.txt
+3537 131
+2860 130
+2470 95
+3961 233
+..
+```
+
+We can feed each pair into the divide function, `%` and sum up:
+
+```q
+q)(%).'{x first where 0=(mod).'x:raze x,/:'x except/:x} each "J"$ "\t" vs'read0 `:input/02.txt
+27 22 26 17 24 18 5 17 17 27 9 12 24 5 23 2f
+q)sum (%).'{x first where 0=(mod).'x:raze x,/:'x except/:x} each "J"$ "\t" vs'read0 `:input/02.txt
+275f
+```

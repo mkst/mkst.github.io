@@ -1,0 +1,389 @@
+---
+layout: post
+title:  "Advent of Code 2017, Day 01"
+date:   2017-12-26 08:00:00 +0000
+categories: aoc tutorial
+---
+
+# Day 1: Inverse Captcha
+
+> The captcha requires you to review a sequence of digits (your puzzle input) and find the **sum** of all **digits that match the next digit** in the list. The **list is circular**, so the digit after the last digit is the first digit in the list.
+
+We need to find all the digits where the next digit is the same (wrapping around at the end of the list), cast these matches into integers and sum them up.
+
+If we were to solve this in [Python](https://www.python.org/), we might do something like this:
+
+```py
+with open("input/01.txt") as f:
+  l = f.readline()[:-1]            # drop the trailing "\n" character
+  m = []                           # our list of matches
+  for i in range(len(l)):
+    if l[i] == l[(i+1) % len(l)]:  # check current against next (modulo to wrap-around)
+      m.append(l[i])               # add the match to list m
+  print sum(map(int, m))           # convert to ints and sum up
+```
+
+However, we are going to solve the problem in Q, and we should aim to avoid loops if we can.
+
+## Solving Part 1
+
+The examples given are `1122`, `1111`, `1234` and `91212129`, with answers of `3`, `4`, `0` and `9` respectively. Let's start by trying to solve for the first example; `1122`.
+
+Rather than iterating over the list of numbers and checking against the next, we can shift the numbers one step to the left, and then compare them. `1234` shifted one to the left is `2341` as the `1` wraps back around to the end, thus `1122` shifted one to the left is `1221`. We can then compare `1` against `1`, `1` against `2`, `2` against `2` and `2` against `1`.
+
+Let's fire up a Q session and get to work. To begin with we start by hardcoding these two character lists as variables `a` and `b`.
+
+```q
+KDB+ 3.5 2017.11.30 Copyright (C) 1993-2017 Kx Systems
+l32/ 4()core 3635MB mark carbon 127.0.1.1 NONEXPIRE
+
+q)a:"1122" / assign "1122" to variable a with assignment operator :
+q)b:"1221" / "1122" rotated one to the left and saved as variable b
+```
+
+We can then use the equality operator `=` to see where the lists match:
+
+```q
+q)b=a / = decends into the list and compares each item one-by-one, the result is a boolean list
+1010b
+```
+
+Note that if we use the match operator `~` we will be checking whether the entire list `a` is equal to the entire list `b`:
+
+```q
+q)b~a / this is not what we want
+0b
+```
+
+We can then use the `where` operator to give us the indices which are true (`1b`) in the boolean list:
+
+```q
+q)where b=a
+0 2
+```
+
+This yields indices `0` and `2`, which is a `"1"` and a `"2"` (note 0-indexing, the first element of a list is at position zero).
+
+We can then use these indices to index back into either of the variables to pull out the matches:
+
+```q
+q)a 0
+"1"
+q)a 2
+"2"
+q)a 0 2
+"12"
+q)b 0 2 / this gives the same! we're using the indices where the lists match!
+"12"
+q)a where b=a
+"12"
+```
+
+We then need to add these numbers together, the `sum` operator looks to be a good bet, but gives a rather strange result:
+
+```q
+q)sum a where b=a
+99i
+```
+
+This is because when we try to perform `sum` on a list of characters, it takes the ASCII values (`49` and `50` respectively) and sums *them* up. We want to add `1` and `2`, so we need to convert the characters to integers (or technically *longs*). There are a few ways to skin a cat, and there are a few ways to convert the list `"12"` to the list `1 2` in Q:
+
+```q
+q)value each "12" / take the value of each item on the right
+1 2
+q)"J"$/:"12" / apply "J" (long) cast ($) to each-right item (big-J casting parses the string into a number)
+1 2
+q)-48+"j"$"12" / cast entire list to longs, then subtract 48 from each (little-j casting takes ASCII values of characters)
+1 2
+```
+
+Note that if we use the first two methods on the string, without 'each' we end up with the number `12`, so be sure to use the `each` or `/:` operators
+
+```q
+q)value "12"
+12
+q)"J"$"12"
+12
+```
+
+Putting this all together with `sum` gives us the correct result for the first example:
+
+```q
+q)sum value each a where b=a
+3
+```
+
+We can confirm that our logic is sound by trying on the second example:
+
+```q
+q)a:"1111"
+q)b:"1111"     / rotating left by 1 gives us the same
+q)sum value each a where b=a
+4
+```
+
+However there must be a better way to perform the rotation than hardcoding the second variable... and there is: the `rotate` operator. This takes two parameters (which makes it a *dyad*): the list to rotate, and the number of positions to rotate said list. A positive number rotates left, a negative rotates right.
+
+```q
+q)1 rotate "12345" / 'infix' notation
+"23451"
+q)rotate[1;"12345"] / square-bracket notation
+"23451"
+q)-1 rotate "12345" / rotating the string right one step
+"51234"
+```
+
+If we combine this with our earlier example we no longer need to define variable `b`:
+
+```q
+q)a:"1122" / set a back to "1122"
+q)sum value each a where rotate[1;a]=a / some people prefer square backets...
+3
+q)sum value each a where (1 rotate a)=a / ...and some people prefer round ones
+3
+```
+
+Now we are cooking with gas! Let's try running this against our input file.
+
+After a quick look on the KX wiki, [read0](https://code.kx.com/wiki/Reference/read0) is the operator of choice.
+
+```q
+q)read0 `:input/01.txt
+"89219596999173583791527386872954869423796749511541239937319456252694758533723379356827826527919988319716763479129317798615256623671833261753648723687974716799998336383225791244575688731487922992586447776135713985554852251379889985389661..
+```  
+
+... and this looks precisely what we need. However if we use `count` to check the length of the object, we find that it has size of `1`, and is in fact a mixed list:
+
+```q
+q)count read0 `:input/01.txt
+1
+q)type read0 `:input/01.txt
+0h
+```
+
+This is because `read0` will split the input file on newlines and return a list. As there is only a single line in our input file, we can take the `first`, which will give us the input as a list of characters:
+
+```q
+q)first read0 `:input/01.txt
+"89219596999173583791527386872954869423796749511541239937319456252694758533723379356827826527919988319716763479129317798615256623671833261753648723687974716799998336383225791244575688731487922992586447776135713985554852251379889985389661..
+```
+
+We can double-check this by taking the `count` again, or checking the type:
+
+```q
+q)count first read0 `:input/01.txt
+2040
+q)type first read0 `:input/01.txt
+10h
+```
+
+Let's save our input file as variable `a` like we did for the earlier example:
+
+```q
+q)a:first read0 `:input/01.txt / save input into variable a
+q)a / check that it looks ok
+"89219596999173583791527386872954869423796749511541239937319456252694758533723379356827826527919988319716763479129317798615256623671833261753648723687974716799998336383225791244575688731487922992586447776135713985554852251379889985389661..
+```
+
+And then run the same code from the example:
+
+```q
+q)sum value each a where (1 rotate a)=a
+1047
+```
+
+> *Congratulations, you got your first star!*
+
+**Note:** If we want a one-liner, we can assign variable `a` on the fly:
+
+```q
+q)sum value each a where (1 rotate a)=a:first read0 `:input/01.txt
+1047
+```
+
+### Bonus 1
+
+Below is a comparison of the different ways we can convert a character list to an integer/long list. The `\t` command returns the time taken in milliseconds to execute the operation(s). We may need to perform the operation many times if it is particularly trivial in order to get a non-zero result. `\t:1000` performs each operation `1000` times and returns the total time taken:
+
+```q
+q)\t sum value each a where (1 rotate a)=a:first read0 `:input/01.txt / the operation takes less than 1 ms to complete
+0
+q)\t:1000 sum value each a where (1 rotate a)=a:first read0 `:input/01.txt / performing it 1000 times shows each run takes approximately 0.2ms
+203
+q)\t:1000 sum "J"$/:a where (1 rotate a)=a:first read0 `:input/01.txt / with the big-J casting it takes approximately 0.08ms to run each
+76
+q)\t:1000 sum -48+"j"$a where (1 rotate a)=a:first read0 `:input/01.txt / with the little-j casting (vectorised) it takes approximately 0.06ms to run each
+57
+```
+
+Vector operations are where `q/kdb+` shines, and you should always strive to perform opeators across lists rather than on each item in a list where possible.
+
+## Solving Part 2
+
+With our first star, **Part 2** of the puzzle opens up (emphasis added):
+
+> Now, instead of considering the next digit, it wants you to consider the digit **halfway around the circular list**. That is, **if your list contains 10 items**, only include a digit in your sum if the digit **10/2 = 5** steps forward matches it. Fortunately, your list has an even number of elements.
+
+Solving the second parts of the AoC challenges can often require a re-write depending on how you tackled **Part 1**. Thankfully we only need to change a couple of things to get our second star.
+
+Instead of checking each item against the *next* one, we need to check against the one halfway around. This is equivalent to rotating by *half-the-length-of-the-list* and comparing as before.
+
+From earlier we know we can use the `count` operator to get the length of a list:
+
+```q
+q)count first read0 `:input/01.txt
+2040
+```
+
+Rather than jumping straight to the solution, let's test with one of the examples: `"12131415"`.
+
+```q
+q)a:"12131415"
+q)count a
+8
+```
+
+If we want to get half of the length of the list, we can either divide by `2`, or multiply by `0.5`:
+
+```q
+q)(count a)%2 / divide by two
+4f
+q)0.5*count a / multiply by half
+4f
+```
+
+Unfortunately dividing will result in a `float`, and multiplying by a `float` will also result in a `float` (note the trailing `f`). `rotate` does not work with floats; it will throw a `type` error:
+
+```q
+q)4f rotate "12345"
+'type
+  [0]  4f rotate "12345"
+```
+
+We have a few options: rounding, casting or using the `div` operator to perform the calculation:
+
+```q
+q)floor 4f / rounds down to nearest whole number
+4
+q)ceiling 4f / rounds up to nearest whole number
+4
+q)"j"$4f / casts to nearest whole number (rounds towards +- infinity)
+4
+q)div[8;2] / returns number of times 1st parameter divides by 2nd, no remainder/fraction
+4
+q)8 div 2 / infix notation
+4
+q)div[7;3] / 3 fits into 7 twice with a remainder of 1
+2
+```
+
+Let's `rotate` the example and use `div` to get half the length of the input:
+
+```q
+q)a
+"12131415"
+q)((count a) div 2) rotate a / perhaps we can reduce the number of brakets?
+"14151213"
+q)div[count a;2] rotate a / sometimes it can be clearer to use [] over ()
+"14151213"
+```
+
+Feeding this into our solution to **Part 1** gives us our second star:
+
+```q
+q)sum value each a where a=div[count a;2] rotate a:first read0 `:input/01.txt
+982
+```
+
+### Bonus 2
+
+Instead of taking the list, rotating it by half the length and comparing against the original list, we can instead split the list in two, compare the halves, and then multiply the sum by `2` (because we are only comparing half the list). The `#` operator is overloaded. When given a list of numbers as the left argument it acts as reshape:
+
+```q
+q)til 6 / til n creates a range of 0 to n-1
+0 1 2 3 4 5
+q)2 3#til 6 / creates a 2x3 grid
+0 1 2
+3 4 5
+```
+
+If we pass in null long,`0N`, as one of the list item arguments to reshape we get the right argument split into either n rows or n columns:
+
+```q
+q)2 0N#til 10
+0 1 2 3 4
+5 6 7 8 9
+q)0N 2#til 10
+0 1
+2 3
+4 5
+6 7
+8 9
+```
+
+We can thus split our input list a into two lists:
+
+```q
+q)a:"12131415" / use the example input
+q)2 0N#a
+"1213"
+"1415"
+```
+
+We want to use the `=` operator again to check for equality, but we need a bit of magic to be able to use it. Trying to pass these two lists straight to the `=` results in an error:
+
+```q
+q)=2 0N#a
+'=
+  [0]  =2 0N#a
+       ^
+```
+
+A solution to this could be to feed the lists into a lambda function:
+
+```q
+q){[x] first[x]=last[x]} 2 0N#a
+1010b
+```
+
+Which could be further improved with the `.` operator which feeds in the list to the function as separate parameters:
+
+```q
+q){[x;y] x=y} . 2 0N#a
+1010b
+```
+
+Better still is to remove the lambda function and use the `=` raw, but because it is normally used infix, we need to wrap it in brackets:
+
+```q
+q)(=) . 2 0N#a
+1010b
+```
+
+This should look familiar, you know what to do next:
+
+```q
+q)sum value each a where (=). 2 0N#a
+2
+```
+
+Now multiply by `2` to account for the fact that we've only looked at half of the list:
+
+```q
+q)2*sum value each a where (=). 2 0N#a
+4
+```
+
+... and feeding in our input file:
+
+```q
+q)2*sum value each a where (=). 2 0N#a:first read0 `:input/01.txt
+982
+```
+
+My full solution for **Day 1** is below, note that I use the little-j vectorised casting and save as variable `a` so that we do not need to re-read in the input file for **Part 2**:
+
+```q
+sum a where a=1 rotate a:-48+"j"$first read0 `:input/01.txt / part 1
+2*sum a where (=) . 2 0N#f / part 2
+```
