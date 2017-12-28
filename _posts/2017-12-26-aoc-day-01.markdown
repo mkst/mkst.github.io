@@ -86,7 +86,7 @@ q)sum a where b=a
 99i
 ```
 
-This is because when we try to perform `sum` on a list of characters, it takes the ASCII values (`49` and `50` respectively) and sums *them* up. We want to add `1` and `2`, so we need to convert the characters to integers (or technically *longs*). There are a few ways to skin a cat, and there are a few ways to convert the list `"12"` to the list `1 2` in Q:
+This is because when we try to perform `sum` on a list of characters, it takes their ASCII values (`49` and `50` respectively) and sums *them* up. We want to add `1` and `2`, so we need to convert the characters to integers (or technically *longs*). There are a few ways to skin a cat, and there are a few ways to convert the list `"12"` to the list `1 2` in Q:
 
 ```q
 q)value each "12" / take the value of each item on the right
@@ -117,7 +117,7 @@ We can confirm that our logic is sound by trying on the second example:
 
 ```q
 q)a:"1111"
-q)b:"1111"     / rotating left by 1 gives us the same
+q)b:"1111" / rotating left by 1 gives us the same
 q)sum value each a where b=a
 4
 ```
@@ -216,7 +216,7 @@ q)\t:1000 sum -48+"j"$a where (1 rotate a)=a:first read0 `:input/01.txt / with t
 57
 ```
 
-Vector operations are where `q/kdb+` shines, and you should always strive to perform opeators across lists rather than on each item in a list where possible.
+Vector operations are where `q/kdb+` shines, and you should always strive to perform operations across lists rather than on each item in a list where possible.
 
 ## Solving Part 2
 
@@ -307,13 +307,13 @@ q)2 3#til 6 / creates a 2x3 grid
 3 4 5
 ```
 
-If we pass in null long,`0N`, as one of the list item arguments to reshape we get the right argument split into either n rows or n columns:
+If we pass the null long,`0N`, as one of the list item arguments to reshape we get the right argument split into either n rows or n columns:
 
 ```q
-q)2 0N#til 10
+q)2 0N#til 10 / two rows
 0 1 2 3 4
 5 6 7 8 9
-q)0N 2#til 10
+q)0N 2#til 10 / two columns
 0 1
 2 3
 4 5
@@ -380,6 +380,8 @@ q)2*sum value each a where (=). 2 0N#a
 q)2*sum value each a where (=). 2 0N#a:first read0 `:input/01.txt
 982
 ```
+
+## Complete Solution To Day 1
 
 My full solution for **Day 1** is below, note that I use the little-j vectorised casting and save as variable `a` so that we do not need to re-read in the input file for **Part 2**:
 

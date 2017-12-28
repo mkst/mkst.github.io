@@ -9,13 +9,16 @@ categories: aoc tutorial
 
 >A passphrase consists of a series of words (lowercase letters) separated by spaces. To ensure security, a valid passphrase **must contain no duplicate words**.
 
-We need to check each list of words and discover whether any word has been repeated. One way to do this is to count how many *unique* words there are in each list, and compare that with the total number of words in the list; if the count differs then there is at least one duplicated word.
+We need to check each list of words and determine whether any word has been repeated. One way to do this is to count how many *unique* words there are in each list, and compare that count with the total number of words in the list; if the count differs then there is at least one duplicate word.
 
 ## Solving Part 1
 
 With that in mind, let's fire up a Q session and setup the three example as variables `a`, `b` and `c` respectively.
 
 ```q
+KDB+ 3.5 2017.11.30 Copyright (C) 1993-2017 Kx Systems
+l32/ 4()core 3635MB mark carbon 127.0.1.1 NONEXPIRE
+
 q)a:("aa";"bb";"cc";"dd";"ee")
 q)b:("aa";"bb";"cc";"dd";"aa")
 q)c:("aa";"bb";"cc";"dd";"aaa")
@@ -98,7 +101,7 @@ q)read0 `:input/04.txt
 ..
 ```
 
-Each line of the input contains a list of words separated by a single space, `" "`, we therefore need to use `vs` to split these lines into lists of words. Like **Day 02**, we can work on the `first` line.
+Each line of the input contains a list of words separated by a single space, `" "`, we can therefore use `vs` to split these lines into lists of words. Like **Day 02**, we can start by trying with the `first` line of the input file.
 
 ```q
 q)" " vs first read0 `:input/04.txt
@@ -140,7 +143,7 @@ q)sum {(count distinct x)=count x} each (" " vs) each read0 `:input/04.txt
 
 > Now, a **valid passphrase must contain no two words that are anagrams of each other** - that is, a passphrase is invalid if any word's letters can be rearranged to form any other word in the passphrase.
 
-One approach to solving this, would be to create permutations of each word in each list, and see whether there are multiple instances, but a more simple way, is to sort each word, and then apply the `distinct` operator like in **Part 1**.
+One approach to solving this, would be to create permutations of each word in each list, and see whether there are multiple instances, but a more simple way is to sort each word in the list (such that any anagrams become equal), and then apply the `distinct` operator as in **Part 1**.
 
 The operator `asc` is used to sort a list into ascending order, however if we apply this to the examples, it will sort the list itself, rather than sorting each word in the list.
 
@@ -151,7 +154,9 @@ q)asc ("abcde";"xyz";"ecdab")
 "xyz"
 ```
 
-We therefore need to use the `each` operator to decend into the list and sort each item:
+As you can see the list has been sorted into ascending alphabetical order.
+
+In order to descend into each list and sort the individual items, we need to use the `each` operator:
 
 ```q
 q)asc each ("abcde";"xyz";"ecdab")
@@ -178,7 +183,7 @@ q){ distinct asc each x}("abcde";"xyz";"ecdab")
 `s#"xyz"
 ```
 
-We can then reuse the same code as **Part 1** to give us the following function
+We can then reuse part of the code from **Part 1** to give us the following function
 
 ```q
 { (count x)=count distinct asc each x }
@@ -193,8 +198,9 @@ q)sum { (count x)=count distinct asc each x } each (" " vs) each read0 `:input/0
 208i
 ```
 
+## Complete Solution To Day 4
 
-My full solution for **Day 4** is below:
+My full solution for **Day 04** is below:
 ```q
 sum { (count distinct x)=count x } each r:" "vs'read0 `:input/04.txt
 sum { (count x)=count distinct asc each x } each r

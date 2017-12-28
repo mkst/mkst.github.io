@@ -261,7 +261,7 @@ As we can see, there is one entry where there are two zeros in the list, this is
 q){ 0=x mod/:x } 5 9 2 8
 1000b
 0100b
-0011b <-- the third entry has two 1s
+0011b // <-- the third entry has two 1s
 0001b
 ```
 
@@ -357,14 +357,7 @@ q)sum { (%).(x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } each
 275f
 ```
 
-My full solution for **Day 02** is below, note that like **Day 01**, I'm saving the parsed input so that we do not have to read the input file again in **Part 2**.
-
-```q
-sum { (max x) - min x } each r:"J"$ "\t" vs'read0 `:input/02.txt
-sum { (%) . x (where 2=sum a),where 2=sum flip a:0=x mod/:x } each r
-```
-
-### Bonus
+### Bonus 1
 
 Rather than performing the modulo operation on each list with each item in the list, we can create a list of distinct pairs to check so that we are not dividing numbers by themselves. In this particular case, it is actually slightly slower - but regardless let's crack on with building this list.
 
@@ -442,11 +435,20 @@ q){x first where 0=(mod).'x:raze x,/:'x except/:x} each "J"$ "\t" vs'read0 `:inp
 ..
 ```
 
-We can feed each pair into the divide function, `%` and sum up:
+We can feed each pair into the divide function, `%`, and `sum` up the results:
 
 ```q
 q)(%).'{x first where 0=(mod).'x:raze x,/:'x except/:x} each "J"$ "\t" vs'read0 `:input/02.txt
 27 22 26 17 24 18 5 17 17 27 9 12 24 5 23 2f
 q)sum (%).'{x first where 0=(mod).'x:raze x,/:'x except/:x} each "J"$ "\t" vs'read0 `:input/02.txt
 275f
+```
+
+## Complete Solution To Day 2
+
+My full solution for **Day 02** is below, note that like **Day 01**, I'm saving the parsed input so that we do not have to read the input file again in **Part 2**.
+
+```q
+sum { (max x) - min x } each r:"J"$ "\t" vs'read0 `:input/02.txt
+sum { (%) . x (where 2=sum a),where 2=sum flip a:0=x mod/:x } each r
 ```
