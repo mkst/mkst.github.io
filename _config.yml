@@ -39,3 +39,7 @@ plugins:
 #   - vendor/cache/
 #   - vendor/gems/
 #   - vendor/ruby/
+
+pages_list:
+  Archive: '/archive'
+  Feed: '/feed.xml'

@@ -1,0 +1,84 @@
+---
+layout: post
+title:  "Advent of Code 2017, Day 00"
+date:   2017-12-26 08:00:00 +0000
+categories: aoc tutorial
+---
+
+# Day 0 - Firing up our first q/kdb+ session
+
+## Linux
+
+Firstly download the `Linux x86 zip` from [kx.com/download/](http://kx.com/download/).
+
+The following assumes we downloaded the zip to `~/Downloads/linuxx86.zip` and want all our code to live in `~/kdb`
+
+```sh
+$ cd # change directory to /home/username
+$ mkdir -p kdb && cd kdb # create ~/kdb directory and enter it
+$ unzip ~/Downloads/linuxx86.zip # extract the zip into the current directory
+Archive:  linuxx86.zip
+  inflating: q/README.txt            
+  inflating: q/l32/q                 
+  inflating: q/q.q                   
+  inflating: q/q.k                   
+  inflating: q/s.k                   
+  inflating: q/trade.q               
+  inflating: q/sp.q
+```
+
+Install rlwrap if it is not already present:
+
+```sh
+$ sudo apt-get install rlwrap # debian
+$ sudo yum install rlwrap # redhat
+$ sudo pacman -S rlwrap # arch
+```
+
+Unless you're running a 32bit version of Linux, you'll likely need to install the `libc` 32bit libraries:
+
+```sh
+$ sudo apt-get install libc-i386 # debian
+$ sudo yum install glibc.i686 # redhat
+```
+
+Now let's create a script to setup our environment, note that this just contains the basics, but we can extend as required later.
+
+```sh
+$ mkdir scripts
+$ cat > scripts/env.sh << \EOF
+BASE=$(readlink -f $(cd "$( dirname "${BASH_SOURCE[0]}"  )"/.. && pwd))
+export QHOME=${BASE}/q
+export PATH=${PATH}:${QHOME}
+EOF
+```
+
+Now setup a shortcut from `q32` to the `q` binary and set the executable flag
+
+```sh
+$ echo "rlwrap -r \${QHOME}/l32/q $* -c 80 240" > q/q32
+$ chmod +x q/q32
+```
+
+Now we can `source` our `env.sh` file and then start up a `q32` session
+
+```sh
+$ source scripts/env.sh
+$ q32
+KDB+ 3.5 2017.11.30 Copyright (C) 1993-2017 Kx Systems
+l32/ 4()core 7889MB mark surface 127.0.1.1 NONEXPIRE  
+
+Welcome to kdb+ 32bit edition
+For support please see http://groups.google.com/d/forum/personal-kdbplus
+Tutorials can be found at http://code.kx.com/q
+To exit, type \\
+To remove this startup msg, edit q.q
+q)
+```
+
+To exit you can either type `\\` (to backslashes) or `exit 0`
+
+```q
+q)exit 0
+$
+```

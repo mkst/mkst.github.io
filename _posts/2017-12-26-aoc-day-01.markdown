@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Advent of Code 2017, Day 01"
-date:   2017-12-26 08:00:00 +0000
+date:   2017-12-26 08:15:00 +0000
 categories: aoc tutorial
 ---
 
@@ -31,7 +31,15 @@ The examples given are `1122`, `1111`, `1234` and `91212129`, with answers of `3
 
 Rather than iterating over the list of numbers and checking against the next, we can shift the numbers one step to the left, and then compare them. `1234` shifted one to the left is `2341` as the `1` wraps back around to the end, thus `1122` shifted one to the left is `1221`. We can then compare `1` against `1`, `1` against `2`, `2` against `2` and `2` against `1`.
 
-Let's fire up a Q session and get to work. To begin with we start by hardcoding these two character lists as variables `a` and `b`.
+Let's fire up a Q session and get to work.
+
+```sh
+$ cd ~/kdb
+$ source scripts/env.sh
+$ q32
+```
+
+To begin with we start by hardcoding these two character lists as variables `a` and `b`.
 
 ```q
 KDB+ 3.5 2017.11.30 Copyright (C) 1993-2017 Kx Systems
@@ -143,9 +151,9 @@ q)sum value each a where (1 rotate a)=a / ...and some people prefer round ones
 3
 ```
 
-Now we are cooking with gas! Let's try running this against our input file.
+Now we are cooking with gas! Let's try running this against our [input file](http://adventofcode.com/2017/day/1/input) which should be downloaded and saved to `~/kdb/input/01.txt`.
 
-After a quick look on the KX wiki, [read0](https://code.kx.com/wiki/Reference/read0) is the operator of choice.
+After a quick look on the KX wiki, [read0](https://code.kx.com/wiki/Reference/read0) is the operator of choice to load the input file into our session.
 
 ```q
 q)read0 `:input/01.txt
