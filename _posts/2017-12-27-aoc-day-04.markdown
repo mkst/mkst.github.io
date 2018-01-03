@@ -57,7 +57,7 @@ q)distinct c
 "aaa"
 ```
 
-From a quick glance it's clear that `b` only has `4` items in it, but let's make it even clearer:
+From a quick glance it's clear that `b` only has `4` items in it, but let's make it even clearer by using `count`
 
 ```q
 q)count distinct a

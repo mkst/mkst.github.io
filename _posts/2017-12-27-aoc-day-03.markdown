@@ -1,0 +1,440 @@
+---
+layout: post
+title:  "Advent of Code 2017, Day 03"
+date:   2017-12-27 08:00:00 +0000
+categories: aoc tutorial
+---
+
+# Day 3: Spiral Memory
+
+> Each square on the grid is allocated in a spiral pattern starting at a location marked 1 and then **counting up while spiraling outward**.
+
+The distance to origin is calculated as the [Manhattan Distance](https://en.wikipedia.org/wiki/Taxicab_geometry). In order to calculate this we need to know how far from the middle we are in both left/right and up/down directions or *planes*.
+
+As we know that we are on the edge of the spiral, the distance to the centre will be half the width of the spiral, plus some distance left/right or up/down from the middle.
+
+<pre>
+37  36  35  34  33  32  31
+38  17  16  15  14  13  30
+39  18   5   4   3  12  29
+40  19   6   <b>1</b>   2  11  28
+41  20   7   8   <b>9</b>  10  27
+42  21  22  23  24  <b>25</b>  26
+43  44  45  46  47  48  <b>49</b>
+</pre>
+
+Taking some examples, if our input was `28`, we would need to go left `3` to get back to the centre, but if we were at `29` we would need to go left `3` and down `1` for a total of `4`.
+
+If we look at the numbers in the bottom right of each ring of the spiral (the **bold** ones) they seem to follow a pattern, `1, 9, 25, 49 ...`. This is the "Odd Squares" sequence, and is known as [A016754](https://oeis.org/A016754) on the [Online Encylopedia of Integer Sequences](https://oeis.org/).
+
+```
+1 9 25 49 81 121 169 225 289 361 441 529 625 729 841 961...
+```
+
+If we can determine which *ring* our input is in, and how many numbers are in that ring, we will be able to determine the distance back to the centre of the spiral.
+
+Given the number `36` as an example, we can see that it's in the ring that starts with `25`. `25` is the 3rd number in the sequence, so we know that the distance is `3` in one direction or *plane* (in this case *up*), but we dont know how far in the other plane (in this case *left*).
+
+The length of the sides of the spiral for a given ring can be calculated by taking the start of the next ring, subtracting the start of the current ring, and dividing by `4`. `49 - 25 = 24`, `24 / 4 = 6`.
+
+`36` is the 11th number in the spiral that starts at `25`. This can be expressed as `36 - 25 = 11`. As there are 4 sides to the spiral we can perform the modulo operation with the length of the side to calculate the distance from the corner *before* the number is found. `11 mod 6 = 5`.
+
+The middle of each ring is half the length of the side of the ring. In this case `3`. If we take the distance from the corner away from the middle, we get the distance that the number is from the middle of edge of the ring. `3 - 5 = -2`. Note that this gives us a negative number (as 36 is to the *left* of the middle number, 34), so we want to take the absolute value of this to get `2`.
+
+Earlier we got the distance in the first plane,`3` (up), and now we have the distance in the second plane, `2` (left). Adding these together gets us our Manhattan Distance, `5`.
+
+That was a lot of writing, but converting to code is a little more simple.
+
+## Solving Part 1
+
+First translate A016754, (2n+1)<sup>2</sup>, into a Q function
+
+```q
+q)A016754:{ (1+2*x)*(1+2*x) }
+q)A016754:{ x*x:1+2*x } / minor optimisation
+q)A016754 3
+49
+```
+
+Now we need to build a function that will return us the closest 'n' for a given result. To do that we can iterate from `x` equal to `0` until `A016754 x` exceeds the input. To do this we will leverage the following pattern:
+
+```q
+{ }/[{};] / perform the action in the left-most lambda until the result of the second lambda is true
+```
+
+Let's fill it out with our example, `36`
+
+```q
+{ x+1 }/[{ 36 > A016754 x};0]
+```
+
+This will loop until `A016754 x` exceeds `36`
+
+```q
+q){ x+1 }/[{ 36 > A016754 x};0]
+3
+```
+
+We can wrap this in a lambda to generalise it:
+
+```q
+q){ { x+1 }/[{[MAX;x] MAX > A016754 x}[x];0] } 36
+3
+```
+
+The third number in the sequence is `49`, the second is `25`:
+
+```q
+q)A016754 3
+49
+q)A016754 2
+25
+```
+
+We can therefore get the size of the ring for input `36`:
+
+```q
+q)(A016754 3)-A016754 2 / how many numbers in the ring
+24
+q)0.25*(A016754 3)-A016754 2 / how long each side of the ring is
+6f
+q)floor 0.25*(A016754 3)-A016754 2 / use floor to convert to long
+6
+```
+
+To get the distance from the bottom right corner to `36` we need to subtract the previous number in the A016754 sequence, `25`
+
+```q
+q)36 - A016754 2
+11
+```
+
+To get the distance from the closest corner (before the `36`), we should `mod` this by the length of the side of the ring (`6`):
+
+```q
+q)(36 - A016754 2) mod floor 0.25*(A016754 3)-A016754 2
+5
+```
+
+Now, we need to take this away from *half* the length of the side of the spiral (`3`), then take the `abs` of this:
+
+```q
+q)3 - (36 - A016754 2) mod floor 0.25*(A016754 3)-A016754 2
+-2
+q)abs 3 - (36 - A016754 2) mod floor 0.25*(A016754 3)-A016754 2
+2
+```
+
+This is the distance from the centre of the edge of the ring, so we need to add that to the number of the ring that our input is in, `3 + 2 = 5`.
+
+We need to simplify this down in order to generalise it.
+
+```q
+q)ring:{ { x+1 }/[{[MAX;x] MAX > A016754 x}[x];0] } 36
+q)ring
+3
+q)abs ring - (36 - A016754 ring - 1) mod floor 0.25*(A016754 ring)-A016754 ring - 1
+2
+q)ring + abs ring - (36 - A016754 ring - 1) mod floor 0.25*(A016754 ring)-A016754 ring - 1
+5
+```
+
+We can turn this into a function:
+
+```q
+{
+  ring:{ { x+1 }/[{[MAX;x] MAX > A016754 x}[x];0] } x;
+  ring + abs ring - (x - A016754 ring - 1) mod floor 0.25*(A016754 ring)-A016754 ring - 1
+  }
+```
+
+Let's bring the contents onto a single line and name this function `solve`
+
+```q
+q)solve:{ ring:{ { x+1 }/[{[MAX;x] MAX > A016754 x}[x];0] } x; ring + abs ring - (x - A016754 ring - 1) mod floor 0.25*(A016754 ring)-A016754 ring - 1 }
+```
+
+Test out with the examples:
+
+```q
+q)solve 1
+0N
+q)solve 12
+3
+q)solve 23
+2
+q)solve 1024
+31
+q)solve 36
+5
+```
+
+Now, for today's first star:
+
+```q
+q)solve 368078
+371
+```
+
+## Solving Part 2
+
+> As a stress test on the system, the programs here clear the grid and then **store the value 1 in square 1**. Then, in the same allocation order as shown above, they **store the sum of the values in all adjacent squares, including diagonals**.
+
+Drats. We avoided building the grid in **Part 1**, but unfortunately there is no escaping it for **Part 2**.
+
+To represent the infinite grid, we will use a dictionary to map the coordinates to the value at those coordinates. The origin can be represented as `0 0` (x, y). We can then go left (west) and right (east) by subtracting or adding `1` to the x value respectively, and can go up (north) and down (south) by adding or subtracting `1` from the y value respectively.
+
+Let's call our current location `l`
+
+```q
+q)l:0 0 / start at the origin
+```
+
+We start our grid with a `1` at the origin. Let's call our grid `g`and initialise the first value to `1`. Note that a dictionary cannot be initialised with atoms (single elements), thus we need to `enlist` the starting values to avoid a length error. We also need to wrap the left portion in brackets to force it to be evaluated together
+
+```q
+q)g:(enlist l)!enlist 1 / bootstrap
+```
+
+We now need to move one step *east* (to the *right*), this can be done by adding `1 0` to `l`
+
+```q
+q)l+:1 0
+q)l
+1 0
+```
+
+In order to get the values of all neighbouring coordinates we can add or subtract values to our current position as follows:
+
+```q
+q)g l + 1 0 / east
+0N
+q)g l + 1 -1 / south-east
+0N
+q)g l + 0 -1 / south
+0N
+q)g l + -1 -1 / south-west
+0N
+q)g l + -1 0 / west
+1
+q)g l + -1 1 / north-west
+0N
+q)g l + 0 1 / north
+0N
+q)g l + 1 1 / north-east
+```
+
+Observe that when we attempt to access our dictionary with an unknown key, we get a null long, `0N`.
+
+In order to build our spiral grid we need to be able to `sum` up all neighbouring coordinates as well as knowning when to turn left.
+
+We can create a list of rules for when to turn direction.
+
+ - If we have a value only to our **west** we need to turn left and head **north**
+ - If we have a value only to our **south** we need to turn left and head **west**
+ - If we have a value only to our **east** we need to turn left and head **south**
+ - If we have a value only to our **north**, we need to turn left and head **east**
+ - If we have values only to our **west and south**, we need to continue **north**
+ - If we have values only to our **south and east**, we need to continue **west**
+ - If we have values only to our **north and east**, we need to continue **south**
+ - If we have values only to our **west and north**, we need to continue **east**
+
+If we convert **n**orth, **e**ast, **s**outh and **w**est to a boolean array (`nesw`), then we can summarise as follows
+
+ - `0001b` or `0011b` then move **north**
+ - `0010b` or `0110b` then move **west**
+ - `0100b` or `1100b` then move **south**
+ - `1000b` or `1001b` then move **east**
+
+Given our current position, let's try to see where we should move next:
+
+```q
+q)g l +/:(0 1;1 0;0 -1;-1 0) / add each offset for north, east, south, west to current position l
+0N 0N 0N 1
+```
+
+Whilst Q does consider `null` to be equivalent to zero when summing up, it does not consider it equal to *False* when casting to booleans:
+
+```q
+q)"b"$g l +/:(0 1;1 0;0 -1;-1 0) / not what we want...
+1111b
+```
+
+Therefore we must use the fill operator `^` to replace instances of nulls with zeroes, `0^`. If we then cast this to booleans we get what we expect.
+
+```q
+q)0^g l +/:(0 1;1 0;0 -1;-1 0)
+0 0 0 1
+q)"b"$0^g l +/:(0 1;1 0;0 -1;-1 0) / much better!
+0001b
+```
+
+We can save this variable as `d` for direction:
+
+```q
+q)d:"b"$0^g l +/:(0 1;1 0;0 -1;-1 0)
+```
+
+So we know that we need to head north, but what should we store in the current location... We need to `sum` up all neighbouring coordinates:
+
+```q
+q)g l+/:(1 1;1 -1;-1 -1;-1 1) / add each offset north-east, south-east, south-west, north-west
+```
+
+Combining all neighbours gives us:
+
+```q
+q)sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1)
+1
+```
+
+We need to set the value of the current coordinate to be the sum of all it's neighbous:
+
+```q
+q)g[l]:sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1)
+```
+
+... and then move along in the right direction. This calls for a switch statement:
+
+```q
+$[(d:"b"$0^g l +/:(0 1;1 0;0 -1;-1 0)) in (0001b;0011b);
+  move north;
+  d in (0010b;0110b);
+  move west;
+  d in (0100b;1100b);
+  move south;
+  else move east
+  ]
+```
+
+Filling in the *move* sections with the correct code gives us:
+
+```q
+$[(d:"b"$0^g l +/:(0 1;1 0;0 -1;-1 0)) in (0001b;0011b);
+  l+:0 1; / move north
+  d in (0010b;0110b);
+  l+:-1 0 / move west
+  d in (0100b;1100b);
+  l+:0 -1; / move south
+  l+:1 0 / move east
+  ]
+```
+
+We need to wrap everything in a `while` condition such that we iterate along our spiral until the sum of the current coordinate exceeds our input.
+
+```q
+while[368078<sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
+ / update current position as the sum of neighbours;
+ / move
+ ]
+```
+
+Let's fill it out a bit more...
+
+```q
+while[368078<sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
+ g[l]:sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
+ / move
+ ]
+```
+
+... and add in the switch:
+
+```q
+while[368078<sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
+ g[l]:sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
+ $[(d:"b"$0^g l +/:(0 1;1 0;0 -1;-1 0)) in (0001b;0011b);
+   l+:0 1; / move north
+   d in (0010b;0110b);
+   l+:-1 0 / move west
+   d in (0100b;1100b);
+   l+:0 -1; / move south
+   l+:1 0 / move east
+   ]
+ ]
+```
+
+Once the `while` loop terminates our answer can be found by calculating the `sum` of the neighbours:
+
+```q
+q)sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1)
+369601
+```
+
+Bingo! Our second star.
+
+### Bonus 1
+
+You may have spotted a fair bit of duplication in this solution, there are a few things we can do to simplify it down.
+
+First, let's store the `sum` as variable `s` during the `while` clause:
+
+```q
+while[368078<s:sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
+ g[l]:s;
+ $[(d:"b"$0^g l +/:(0 1;1 0;0 -1;-1 0)) in (0001b;0011b);
+   l+:0 1; / move north
+   d in (0010b;0110b);
+   l+:-1 0 / move west
+   d in (0100b;1100b);
+   l+:0 -1; / move south
+   l+:1 0 / move east
+   ]
+ ]
+```
+
+Then let's save the values of the north, east, south, west neighbours as `n` and use that in the switch:
+
+```q
+while[368078<s:sum (n:g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
+ g[l]:s;
+ $[(d:"b"$0^n) in (0001b;0011b);
+   l+:0 1; / move north
+   d in (0010b;0110b);
+   l+:-1 0 / move west
+   d in (0100b;1100b);
+   l+:0 -1; / move south
+   l+:1 0 / move east
+   ]
+ ]
+```
+
+In fact, we dont even need the intermediate variable `s`, we can assign `g[l]` as part of the `while` condition:
+
+```q
+while[368078>g[l]:sum (n:g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
+  $[(d:"b"$0^n) in (0001b;0011b);
+    l+:0 1; / move north
+    d in (0010b;0110b);
+    l+:-1 0; / move west
+    d in (0100b;1100b);
+    l+:0 -1; / move south
+    l+:1 0 / move east
+    ]
+  ];
+```
+
+And the answer to **Part 2** is now simply the value of the current location `g l`.
+
+## Complete Solution To Day 3
+
+```q
+A016754:{ x*(x:1+2*x) }
+{ ring:{ { x+1 }/[{[MAX;x] MAX > A016754 x}[x];0] } x;
+  ring + abs ring - (x - A016754 ring - 1) mod floor 0.25*(A016754 ring)-A016754 ring - 1 } 368078
+
+g:(enlist 0 0)!enlist 1 / bootstrap
+l:1 0 / start at second position
+
+while[368078>g[l]:sum (n:g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
+  $[(d:"b"$0^n) in (0001b;0011b);
+    l+:0 1; / move north
+    d in (0010b;0110b);
+    l+:-1 0; / move west
+    d in (0100b;1100b);
+    l+:0 -1; / move south
+    l+:1 0 / move east
+    ]
+  ];
+g l
+```

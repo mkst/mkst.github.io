@@ -1,0 +1,316 @@
+---
+layout: post
+title:  "Advent of Code 2017, Day 06"
+date:   2018-01-03 08:00:00 +0000
+categories: aoc tutorial
+---
+
+# Day 6: Memory Reallocation
+
+> The reallocation routine operates in cycles. In each cycle, it **finds the memory bank with the most blocks** (ties won by the lowest-numbered memory bank) and redistributes those blocks among the banks. To do this, it **removes all of the blocks from the selected bank, then moves to the next (by index) memory bank and inserts one of the blocks**. It continues doing this until it runs out of blocks; **if it reaches the last memory bank, it wraps around to the first one**.
+
+So, given a list we need to find the maximum number in the list, and in the event there is a tie, we will take the first one we find.
+
+We then need to reset this 'bank' (index) to zero and share out the 'blocks' in a round-robin fashion until we've shared them all out.
+
+## Solving Part 1
+
+From **Day 01** we know that the `max` operator will give us the maximum number in a list.
+
+Let's try with the example, `0 2 7 0`
+
+```q
+q)max 0 2 7 0
+7
+```
+
+We know the maximum of the list, but not *where* it is in the list. Leveraging some code from **Day 01** allows us to build the following snippet which give us the indices of the list where the maximum occurs:
+
+```q
+q)7=0 2 7 0
+0010b
+q)where 7=0 2 7 0
+,2
+q){ where (max x)=x } 0 2 7 0 / turn it into a lambda to make it general
+,2
+q){ where x=max x } 0 2 7 0 / switching around means we can avoid using brackets
+,2
+```
+
+In the event of a tie (e.g. more than 1 maximum) we should take the `first`, so let's extend our function:
+
+```q
+q){ first where x=max x } 0 2 7 0
+2
+```
+
+For reasons that should become clear a little later, let's store our current index as variable `w`
+
+```q
+q)w:{ first where x=max x } 0 2 7 0
+q)w
+2
+```
+
+The instructions tell us that we need to redistribute the blocks found at this location across the other indices in the list.
+
+In order to perform this round-robin we can use the `til` operator to determine which indices will receive a share of the redistributed blocks.
+
+In our example we know that there are `7` blocks to be distributed (the `max` of the list), and we should start at the next index on from `w`. Note that `til` starts from zero.
+
+```q
+q)til 7 / til x generates the range of 0..(x-1)
+0 1 2 3 4 5 6
+q)w + til 7 / add our current offset w
+2 3 4 5 6 7 8
+q)1 + w + til 7 / and add one more as we need to start from the next index
+3 4 5 6 7 8 9
+```
+
+This suggests that we need to distribute the blocks to indices 4 and higher - but our list only contains `4` entries, so this won't work as-is. We need to use the modulo operator, `mod`, to perform the wrap-around for us. We know our list has `4` entries so let's try `mod` our indices by `4`
+
+```q
+q)(1 + w + til 7) mod 4 / mod the left by the right
+3 0 1 2 3 0 1
+q)mod[1 + w + til 7;4] / using square-brackets
+3 0 1 2 3 0 1
+q)mod[;4] 1 + w + til 7 / or using projections
+3 0 1 2 3 0 1
+```
+
+We now know which indices will be receiving the redistrubuted blocks, we need to perform the redistribution.
+
+It would be handy to have a `count` of blocks that should be distributed to each index. We can use the `group` operator to get us halfway there:
+
+```q
+q)group mod[;4] 1 + w + til 7
+3| 0 4
+0| 1 5
+1| 2 6
+2| ,3
+```
+
+This groups the distinct values in the list as keys in a dictionary, with the values of the dictionary being the indices that the keys can be found.
+
+We can then `count each` entry in our dictionary to get the number of blocks that each index should receive:
+
+```q
+q)count each group mod[;4] 1 + w + til 7
+3| 2
+0| 2
+1| 2
+2| 1
+```
+
+We can use the `key` and `value` operators to pull the keys and values out of this dictionary
+
+```q
+q)key count each group mod[;4] 1 + w + til 7
+3 0 1 2
+q)value count each group mod[;4] 1 + w + til 7
+2 2 2 1
+```
+
+If we call the dictionary `b` (for blocks) we can reduce the code down:
+
+```q
+q)b:count each group mod[;4] 1 + w + til 7
+q)key b
+3 0 1 2
+q)value b
+2 2 2 1
+```
+
+A very versatile operation in Q is the apply function `@`. It can be used with a varying number of parameters, doing a different thing in each case.
+
+We will be using it with `4` parameters. It works in the following manner:
+
+```
+@[variable;indices;operator;parameters]
+```
+
+In our case the variable will be our input list `0 2 7 0`, the indices are the keys of the dictionary, `3 0 1 2`, the operator is addition, `+`, and the parameters are the values of our dictionary, `2 2 2 1`.
+
+We can hardcode to begin with:
+
+```q
+q)@[0 2 7 0;3 0 1 2;+;2 2 2 1]
+2 4 8 2
+```
+
+This has applied the addition operator `+` to the list `0 2 7 0` at indices `3 0 1 2` with parameters `2 2 2 1`. Or said another way, it has added `2`, `2`, `2` and `1` to the values at indices `3`, `0` `1` and `2` of the list `0 2 7 0`.
+
+Note that this doesn't match the example, the result *should* be `2 4 1 2` after the redistribution. We neglected to reset the maximum index to zero before we performed the redistribution!
+
+It should look like this:
+
+```q
+q)@[0 2 0 0;3 0 1 2;+;2 2 2 1] / still hardcoding the indices and parameters
+2 4 1 2
+q)@[0 2 0 0;key b;+;value b] / using our variable b
+2 4 1 2
+```
+
+Let's put all this together into a somewhat-hardcoded function, and then work to generalise:
+
+```q
+{ w:first where x=max x; / move the w inside the function
+  b:count each group mod[;4] 1 + w + til 7; / save our grouped blocks as b
+  x[w]:0; / reset the maximum
+  @[x;key b;+;value b] / apply the distribution
+  }
+```
+
+Not bad, but we still have the max and the length of the input hardcoded. Let's switch them out for Q operations:
+
+```q
+{ w:first where x=max x;
+  b:count each group mod[;count x] 1 + w + til max x; / count returns length
+  x[w]:0; / reset the maximum
+  @[x;key b;+;value b]
+  }
+```
+
+We can call this function `solve` and try it out on the example again. Note that you can either bring everything onto a single line, or save the function in a `06.q` file which you will need to load in.
+
+For now, we can just join everything together onto a single line so we can test on the command-line:
+
+```q
+q)solve:{ w:first where x=max x;b:count each group mod[;count x] 1 + w + til max x;x[w]:0;@[x;key b;+;value b] }
+```
+
+Let's try it out on the example `0 2 7 0` until we get a repeat:
+
+```q
+q)solve 0 2 7 0
+2 4 1 2
+q)solve 2 4 1 2
+3 1 2 3
+q)solve 3 1 2 3
+0 2 3 4
+q)solve 0 2 3 4
+1 3 4 1
+q)solve 1 3 4 1
+2 4 1 2
+```
+
+This matches the examples, but the challenge for **Part 1** is to calculate the number of redistributions performed before a loop is discovered.
+
+We can use our trusty `while` loop to repeat until a particular condition no longer holds true - but we need to build that condition.
+
+In order to check whether our state has been seen before, we need to keep track of all seen states. For that we can use a list. We will initialise the list with the initial input state. Let's call our list `s` for states, and our initial input `r`.
+
+```q
+q)r:0 2 7 0
+q)s:enlist r / enlist to create a list
+```
+
+We then want to update `r` as `solve r`, and check whether this is already present in `s`. If it's already present we want to exit the loop... or flipped around we want to keep looping while `solve r` is `not` in `s`.
+
+```q
+while[not (solve r) in s;
+ / add (solve r) to s
+ / set r as result of 'solve r'
+ ]
+```
+
+Filling in the comment with code:
+
+```q
+while[not (solve r) in s;
+  s,:solve r; / add solve r to known states
+  r:solve r / update r as solve r
+  ]
+```
+
+... however we are now performing `solve r` 3 times, we only need to do it once!
+
+```q
+while[not (r:solve r) in s;
+  s,:r; / add r to known states
+  ]
+```
+
+Let's run our `while` loop and see how `s` looks once the loop exits:
+
+```q
+q)while[not (r:solve r) in s;s,:r]
+q)s
+0 2 7 0
+2 4 1 2
+3 1 2 3
+0 2 3 4
+1 3 4 1
+```
+
+And if we `count s` we will see it contains 5 states, which is the answer to the example input.
+
+Now let's move on to our input file for **Day 6**.
+
+```q
+q)read0 `:input/06.txt
+"4\t1\t15\t12\t0\t9\t9\t5\t5\t8\t7\t3\t14\t5\t12\t3"
+```
+
+A list of numbers separated by tabs. Almost identical to **Day 02**. We need to take the `first` item from the `read0`, split on `"\t"` and then cast to longs:
+
+```q
+q)"J"$"\t" vs first read0 `:input/06.txt
+```
+
+Save this as `r` and update `s` to contain this initial state.
+
+```q
+q)r:"J"$"\t" vs first read0 `:input/06.txt
+q)s:enlist r
+```
+
+Execute our `while` loop and then `count` the length of `s` to get our first star for today:
+
+```q
+q)while[not (r:solve r) in s;s,:r]
+q)count s
+6681
+```
+
+## Solving Part 2
+
+> Out of curiosity, **the debugger would also like to know the size of the loop**: starting from a state that has already been seen, how many block redistribution cycles must be performed before that same state is seen again?
+
+We have kept track of all states in variable `s`. All we need to do is determine the distance between the first occurance of the *current* state (stored in `r`) and the first time it was seen.
+
+```q
+q)first where r~/:s
+4289
+```
+
+Subtract this from the length of our states:
+
+```q
+q)(count s) - first where r~/:s
+2392
+```
+
+If only all second stars were that easy to get!
+
+
+## Complete Solution To Day 6
+
+I called the `solve` function `f` for brevity, otherwise it's exactly as this blog post.
+
+```q
+/ redistribution function
+f:{[x]
+  w:first where x=m:max x;
+  x[w]:0;
+  c:count each group mod[;count x] w + 1 + til m;
+  @[x;key c;+;value c]
+  }
+
+s:enlist r:"J"$ "\t" vs first read0 `:input/06.txt
+
+while[not (r:f r) in s;s,:r]
+count s
+
+(count s) - first where r~/:s
+```

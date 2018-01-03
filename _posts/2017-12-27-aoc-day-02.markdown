@@ -35,7 +35,7 @@ q)min a
 1
 ```
 
-If we want to subtract `min a` from `max a` we need to use some brackets. This is because Q is interpreted right-to-left it consumes whatever the next piece is, even if there's more to the left of it. Usually this will result in an error, *however* in this case, if we just write the commands out as below, we actually get the correct answer of `8`!
+If we want to subtract `min a` from `max a` we need to use some brackets. This is because Q is interpreted right-to-left and it will consume whatever the next piece is, even if there's more to the left of it. Usually this will result in an error, *however* in this case, if we just write the commands out as below, we actually get the correct answer of `8`!
 
 ```q
 q)max a - min a
@@ -189,7 +189,7 @@ q)"J"$"\t" vs first read0 `:input/02.txt
 3093 749 3469 142 2049 3537 1596 3035 2424 3982 3290 125 249 131 118 3138
 ```
 
-Now that we've got the code to parse the first line of the input file, we can switch out the `first` for an `each`. Unfortunately this gives us an error as Q is trying to apply the `vs` operator to each item in the list without the separator character `"\t"`.
+Now that we've got the code to parse the first line of the input file, we can switch out the `first` for an `each`. Unfortunately this gives us an error as Q is trying to apply the `vs` operator itself to `each` item in the list (without the required second parameter, the separator character `"\t"`).
 
 ```q
 q)"J"$"\t" vs each read0 `:input/02.txt
@@ -233,7 +233,7 @@ q)0=8 mod 2
 1b
 ```
 
-In order to find the result programatically, we can perform the modulo operation on each item in our list against the whole list and see where the result is zero. As we are performing modulo operation against each number, the matches will be where we find two results that are zero.
+In order to find the result programatically, we can perform the modulo operation on each item in our list against the whole list and see where the result is zero. As we are performing modulo operation against each number, the matches will be where we find **two** results that are zero.
 
 We will use the each-right operator, `/:`, along with `mod`.
 
@@ -261,11 +261,11 @@ As we can see, there is one entry where there are two zeros in the list, this is
 q){ 0=x mod/:x } 5 9 2 8
 1000b
 0100b
-0011b // <-- the third entry has two 1s
+0011b / <-- the third entry has two 1s
 0001b
 ```
 
-If we use sum to count up the `1`s, we get the result below:
+If we use `sum` to count up the `1`s, we get the result below:
 
 ```q
 q){ sum 0=x mod/:x } 5 9 2 8
@@ -292,7 +292,7 @@ q){ x first where 2=sum 0=x mod/:x } 5 9 2 8 / where always returns a list, lets
 8
 ```
 
-If we look back, we know that the 3rd item in our list (index 2) is the other result. In order to sum across the list rather than down it we have two options. We can use the `each` operator such that `sum` is applied to each list, or we can use `flip` to rotate our results around, and then perform the same operations as before:
+If we look back, we know that the 3rd item in our list (index 2) is the other result. In order to `sum` across the list rather than down it we have two options. We can use the `each` operator such that `sum` is applied to `each` list, or we can use `flip` to rotate our results around 90-degrees, and then perform the same operations as before:
 
 ```q
 q){ sum each 0=x mod/:x } 5 9 2 8 / we can use 'sum each'

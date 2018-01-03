@@ -7,9 +7,13 @@ categories: aoc tutorial
 
 # Day 0 - Firing up our first q/kdb+ session
 
+Getting started with q/kdb+ isn't quite as straightforward as simply downloading the binary file and double-clicking. You can read through the *official* getting started guide on the kx wiki, or you can follow the steps below.
+
+**Note:** Windows and Mac instructions will follow later...
+
 ## Linux
 
-Firstly download the `Linux x86 zip` from [kx.com/download/](http://kx.com/download/).
+Firstly download the `Linux-x86` zip from [kx.com/download/](http://kx.com/download/).
 
 The following assumes we downloaded the zip to `~/Downloads/linuxx86.zip` and want all our code to live in `~/kdb`
 
@@ -18,16 +22,16 @@ $ cd # change directory to /home/username
 $ mkdir -p kdb && cd kdb # create ~/kdb directory and enter it
 $ unzip ~/Downloads/linuxx86.zip # extract the zip into the current directory
 Archive:  linuxx86.zip
-  inflating: q/README.txt            
-  inflating: q/l32/q                 
-  inflating: q/q.q                   
-  inflating: q/q.k                   
-  inflating: q/s.k                   
-  inflating: q/trade.q               
+  inflating: q/README.txt
+  inflating: q/l32/q
+  inflating: q/q.q
+  inflating: q/q.k
+  inflating: q/s.k
+  inflating: q/trade.q
   inflating: q/sp.q
 ```
 
-Install rlwrap if it is not already present:
+Install `rlwrap` if it is not already present:
 
 ```sh
 $ sudo apt-get install rlwrap # debian
@@ -66,7 +70,7 @@ Now we can `source` our `env.sh` file and then start up a `q32` session
 $ source scripts/env.sh
 $ q32
 KDB+ 3.5 2017.11.30 Copyright (C) 1993-2017 Kx Systems
-l32/ 4()core 7889MB mark surface 127.0.1.1 NONEXPIRE  
+l32/ 4()core 7889MB mark surface 127.0.1.1 NONEXPIRE
 
 Welcome to kdb+ 32bit edition
 For support please see http://groups.google.com/d/forum/personal-kdbplus

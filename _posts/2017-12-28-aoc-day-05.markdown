@@ -40,7 +40,7 @@ q)c:0 / we haven't jumped anywhere yet
 We need to perform the following steps:
 
  - get the jump offset for the current position
- - increase the jump offset for the current position
+ - increase the jump offset for the current position by one
  - increase our jump counter by one
  - jump to the new position
 
@@ -61,18 +61,18 @@ To put that into Q code:
 We need to keep doing this until we jump past the end of our list. If you try to index into a list past it's end (or before it's start) you will get a null of the type of the first item in the list. For example:
 
 ```q
-q)(1 2 3 4) 5 / this will return a null long
+q)(1 2 3 4) 4 / this will return a null long
 0N
-q)"abcd" 5 / this will return a null character (empty space)
+q)"abcd" 4 / this will return a null character (empty space)
 " "
-q)`a`b`c`d 5 / this will return the null symbol (backtick)
+q)`a`b`c`d 4 / this will return the null symbol (backtick)
 `
 ```
 
 We can confirm that `ON` is null with the `null` operator
 
 ```q
-q)null (1 2 3 4) 5
+q)null (1 2 3 4) 4
 1b
 ```
 
@@ -165,7 +165,7 @@ while[not null l[p];
   j:l[p]; / set j to l at index p
   l[p]+:1; / update the value of l at index p by 1
   c+:1; / update the value of c by one
-  p+:j] / add the jump offset to position p  
+  p+:j] / add the jump offset to position p
 ```
 
 ... but if we want to run at the Q prompt, we need to join everything together into a single line:
@@ -248,7 +248,11 @@ else:
   current_value += -1
 ```
 
-We have the equivalent of an `if-else` statement in Q too in the form `$[condition to check;execute if true;execute if false]`.
+We have the equivalent of an `if-else` statement in Q too in the form
+
+```
+$[condition to check;execute if true;execute if false]
+```
 
 The condition we want to check is whether `j >= 3`, and if true we want to do `l[p]+:-1`, and if false we want to do `l[p]+:1`. Putting this together gives us
 
