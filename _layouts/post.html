@@ -19,12 +19,11 @@ layout: default
     {{ content }}
   </div>
 
-  <div class="next-previous">
   {% if page.previous %}
-    <span class="alignleft">Previous: <a class="u-url" href="{{ page.previous.url | relative_url }}">{{ page.previous.title }}</a></span>
+    <span style="float: left">Previous: <a class="u-url" href="{{ page.previous.url | relative_url }}">{{ page.previous.title }}</a></span>
   {% endif %}
   {% if page.next %}
-    <span class="alignright">Next: <a class="u-url" href="{{ page.next.url | relative_url }}">{{ page.next.title }}</a></span>
+    <span style="float: right">Next: <a class="u-url" href="{{ page.next.url | relative_url }}">{{ page.next.title }}</a></span>
   {% endif %}
 
   <div style="clear: both;"></div>
