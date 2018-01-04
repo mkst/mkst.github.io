@@ -3,6 +3,7 @@ layout: post
 title:  "Advent of Code 2017, Day 01"
 date:   2017-12-26 08:15:00 +0000
 categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/01.q', 'solution')
 ---
 
 # Day 1: Inverse Captcha
@@ -158,7 +159,7 @@ After a quick look on the KX wiki, [read0](https://code.kx.com/wiki/Reference/re
 ```q
 q)read0 `:input/01.txt
 "89219596999173583791527386872954869423796749511541239937319456252694758533723379356827826527919988319716763479129317798615256623671833261753648723687974716799998336383225791244575688731487922992586447776135713985554852251379889985389661..
-```  
+```
 
 ... and this looks precisely what we need. However if we use `count` to check the length of the object, we find that it has size of `1`, and is in fact a mixed list:
 
@@ -391,9 +392,8 @@ q)2*sum value each a where (=). 2 0N#a:first read0 `:input/01.txt
 
 ## Complete Solution To Day 1
 
-My full solution for **Day 1** is below, note that I use the little-j vectorised casting and save as variable `a` so that we do not need to re-read in the input file for **Part 2**:
+My full solution for **Day 1** can be found below. It's pulled directly from my [Github repo](https://github.com/streetster/aoc) using [D3.js](https://d3js.org) and I'm using [highlight.js](https://highlightjs.org/) for syntax highlighting (which is why it looks a little different to the other code snippets).
 
-```q
-sum a where a=1 rotate a:-48+"j"$first read0 `:input/01.txt / part 1
-2*sum a where (=) . 2 0N#f / part 2
-```
+Note that I use the little-j vectorised casting and save the result as a variable so that we do not need to re-read in the input file for **Part 2**:
+
+<pre class="q" id='solution'></pre>

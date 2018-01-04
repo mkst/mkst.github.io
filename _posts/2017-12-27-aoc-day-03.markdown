@@ -3,6 +3,7 @@ layout: post
 title:  "Advent of Code 2017, Day 03"
 date:   2017-12-27 08:00:00 +0000
 categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/03.q', 'solution')
 ---
 
 # Day 3: Spiral Memory
@@ -418,23 +419,6 @@ And the answer to **Part 2** is now simply the value of the current location `g 
 
 ## Complete Solution To Day 3
 
-```q
-A016754:{ x*(x:1+2*x) }
-{ ring:{ { x+1 }/[{[MAX;x] MAX > A016754 x}[x];0] } x;
-  ring + abs ring - (x - A016754 ring - 1) mod floor 0.25*(A016754 ring)-A016754 ring - 1 } 368078
+My full solution for **Day 03** is below:
 
-g:(enlist 0 0)!enlist 1 / bootstrap
-l:1 0 / start at second position
-
-while[368078>g[l]:sum (n:g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
-  $[(d:"b"$0^n) in (0001b;0011b);
-    l+:0 1; / move north
-    d in (0010b;0110b);
-    l+:-1 0; / move west
-    d in (0100b;1100b);
-    l+:0 -1; / move south
-    l+:1 0 / move east
-    ]
-  ];
-g l
-```
+<pre class="q" id='solution'></pre>

@@ -3,6 +3,7 @@ layout: post
 title:  "Advent of Code 2017, Day 02"
 date:   2017-12-27 08:00:00 +0000
 categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/02.q', 'solution')
 ---
 
 # Day 2: Corruption Checksum
@@ -448,7 +449,4 @@ q)sum (%).'{x first where 0=(mod).'x:raze x,/:'x except/:x} each "J"$ "\t" vs're
 
 My full solution for **Day 02** is below, note that like **Day 01**, I'm saving the parsed input so that we do not have to read the input file again in **Part 2**.
 
-```q
-sum { (max x) - min x } each r:"J"$ "\t" vs'read0 `:input/02.txt
-sum { (%) . x (where 2=sum a),where 2=sum flip a:0=x mod/:x } each r
-```
+<pre class="q" id='solution'></pre>

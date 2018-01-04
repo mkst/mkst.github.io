@@ -3,6 +3,7 @@ layout: post
 title:  "Advent of Code 2017, Day 05"
 date:   2017-12-28 08:00:00 +0000
 categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/05.q', 'solution')
 ---
 
 # Day 5: A Maze of Twisty Trampolines, All Alike
@@ -314,12 +315,4 @@ We dont need to initialise the jump variable `j` outside of the loop, we can ini
 
 This means that my solution to **Day 05** looks like this:
 
-```q
-ll:l:"J"$read0 `:input/05.txt
-p:c:0; / pointer, counter
-while[not null j:l[p];l[p]+:1;c+:1;p+:j];c / part 1
-
-l:ll / reset list
-p:c:0; / reset pointer, counter
-while[not null j:l[p];l[p]+:$[j>2;-1;1];c+:1;p+:j];c / part 2
-```
+<pre class="q" id='solution'></pre>
