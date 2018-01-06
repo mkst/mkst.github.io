@@ -57,21 +57,21 @@ q)b=a / = decends into the list and compares each item one-by-one, the result is
 1010b
 ```
 
-Note that if we use the match operator `~` we will be checking whether the entire list `a` is equal to the entire list `b`:
+Note that if we use the [match](http://code.kx.com/q/ref/comparison/#match) operator `~` we will be checking whether the *entire* list `a` is equal to the *entire* list `b`:
 
 ```q
 q)b~a / this is not what we want
 0b
 ```
 
-We can then use the `where` operator to give us the indices which are true (`1b`) in the boolean list:
+We can then use the [where](http://code.kx.com/q/ref/select/#where) operator to give us the indices which are true (`1b`) in the boolean list:
 
 ```q
 q)where b=a
 0 2
 ```
 
-This yields indices `0` and `2`, which is a `"1"` and a `"2"` (note 0-indexing, the first element of a list is at position zero).
+This yields indices `0` and `2`, which is a `"1"` and a `"2"` (note [0-indexing](https://en.wikipedia.org/wiki/Zero-based_numbering), the first element of a list is at position zero).
 
 We can then use these indices to index back into either of the variables to pull out the matches:
 
@@ -82,20 +82,20 @@ q)a 2
 "2"
 q)a 0 2
 "12"
-q)b 0 2 / this gives the same! we're using the indices where the lists match!
+q)b 0 2 / naturally this gives the same result, we're using the indices where the lists match!
 "12"
 q)a where b=a
 "12"
 ```
 
-We then need to add these numbers together, the `sum` operator looks to be a good bet, but gives a rather strange result:
+We then need to add these numbers together, the [sum](http://code.kx.com/q/ref/arith-integer/#sum) operator looks to be a good bet, but gives a rather strange result:
 
 ```q
 q)sum a where b=a
 99i
 ```
 
-This is because when we try to perform `sum` on a list of characters, it takes their ASCII values (`49` and `50` respectively) and sums *them* up. We want to add `1` and `2`, so we need to convert the characters to integers (or technically *longs*). There are a few ways to skin a cat, and there are a few ways to convert the list `"12"` to the list `1 2` in Q:
+This is because when we try to perform `sum` on a list of characters, it takes their ASCII values (`49` and `50` respectively) and sums *them* up. We want to add `1` and `2`, so we need to convert the characters to integers (or technically *longs*). There are a few ways to skin a cat, and there are a few ways to convert the character list `"12"` to the long list `1 2` in Q:
 
 ```q
 q)value each "12" / take the value of each item on the right
@@ -106,7 +106,7 @@ q)-48+"j"$"12" / cast entire list to longs, then subtract 48 from each (little-j
 1 2
 ```
 
-Note that if we use the first two methods on the string, without 'each' we end up with the number `12`, so be sure to use the `each` or `/:` operators
+Note that if we use the first two methods on the string, without 'each' we end up with the number `12`, so be sure to use the `each` or `/:` ([each-right](http://code.kx.com/q/ref/adverbs/#each-right)) operators
 
 ```q
 q)value "12"
@@ -122,7 +122,7 @@ q)sum value each a where b=a
 3
 ```
 
-We can confirm that our logic is sound by trying on the second example:
+We can confirm that our logic is sound by trying on the second example, `1111`
 
 ```q
 q)a:"1111"
@@ -131,7 +131,7 @@ q)sum value each a where b=a
 4
 ```
 
-However there must be a better way to perform the rotation than hardcoding the second variable... and there is: the `rotate` operator. This takes two parameters (which makes it a *dyad*): the list to rotate, and the number of positions to rotate said list. A positive number rotates left, a negative rotates right.
+However there must be a better way to perform the rotation than hardcoding the second variable... and there is: the [rotate](http://code.kx.com/q/ref/lists/#rotate) operator. This takes two parameters (which makes it a *dyad*): the list to rotate, and the number of positions to rotate said list. A positive number rotates left, a negative rotates right.
 
 ```q
 q)1 rotate "12345" / 'infix' notation
@@ -142,26 +142,53 @@ q)-1 rotate "12345" / rotating the string right one step
 "51234"
 ```
 
-If we combine this with our earlier example we no longer need to define variable `b`:
+We can therefore define `b` as a rotation of `a`
 
 ```q
-q)a:"1122" / set a back to "1122"
+q)a:"1122" / define a
+q)b:1 rotate a / like this
+q)b
+"1221"
+q)b:rotate[1;a] / or like this
+q)b
+"1221"
+```
+
+However, we do not need to define `b` at all, we can use the result of rotating `a` like so
+
+```q
+q)rotate[1;a]=a / some people prefer square backets...
+1010b
+q)(1 rotate a)=a / ...and some people prefer round ones
+1010b
+```
+
+**Note:** We need to wrap the `1 rotate a` in brackets to ensure it is evaluated together, otherwise we will end up performing `1 rotate` on `a=a`!
+
+```q
+q)1 rotate a=a / this will always return a list of true values
+1111b
+```
+
+Whether we use the square bracket notation or wrap the rotation in rounded ones, we've now got a piece of code that can solve **Part 1**:
+
+```q
 q)sum value each a where rotate[1;a]=a / some people prefer square backets...
 3
 q)sum value each a where (1 rotate a)=a / ...and some people prefer round ones
 3
 ```
 
-Now we are cooking with gas! Let's try running this against our [input file](http://adventofcode.com/2017/day/1/input) which should be downloaded and saved to `~/kdb/input/01.txt`.
+Let's try running this against our [puzzle input](http://adventofcode.com/2017/day/1/input) which should be downloaded and saved to `~/kdb/input/01.txt`.
 
-After a quick look on the KX wiki, [read0](https://code.kx.com/wiki/Reference/read0) is the operator of choice to load the input file into our session.
+After a quick look on the KX wiki, [read0](http://code.kx.com/q/ref/filewords/#read0) is the operator of choice to load the input file into our session.
 
 ```q
 q)read0 `:input/01.txt
 "89219596999173583791527386872954869423796749511541239937319456252694758533723379356827826527919988319716763479129317798615256623671833261753648723687974716799998336383225791244575688731487922992586447776135713985554852251379889985389661..
 ```
 
-... and this looks precisely what we need. However if we use `count` to check the length of the object, we find that it has size of `1`, and is in fact a mixed list:
+... and this looks precisely what we need. However if we use [count]() to check the length of the object, we find that it has size of `1`, and is in fact a mixed list:
 
 ```q
 q)count read0 `:input/01.txt
@@ -177,7 +204,7 @@ q)first read0 `:input/01.txt
 "89219596999173583791527386872954869423796749511541239937319456252694758533723379356827826527919988319716763479129317798615256623671833261753648723687974716799998336383225791244575688731487922992586447776135713985554852251379889985389661..
 ```
 
-We can double-check this by taking the `count` again, or checking the type:
+We can double-check this by taking the `count` again, or checking the [type](http://code.kx.com/q/ref/metadata/#type):
 
 ```q
 q)count first read0 `:input/01.txt
@@ -212,7 +239,7 @@ q)sum value each a where (1 rotate a)=a:first read0 `:input/01.txt
 
 ### Bonus 1
 
-Below is a comparison of the different ways we can convert a character list to an integer/long list. The `\t` command returns the time taken in milliseconds to execute the operation(s). We may need to perform the operation many times if it is particularly trivial in order to get a non-zero result. `\t:1000` performs each operation `1000` times and returns the total time taken:
+Below is a comparison of the different ways we can convert a character list to an integer/long list. The `\t` command returns the time taken in milliseconds to execute the operation(s). We may need to perform the operation many times if it is particularly trivial in order to get a non-zero result. `\t:1000` performs each operation `1000` times and returns the total time taken in milliseconds:
 
 ```q
 q)\t sum value each a where (1 rotate a)=a:first read0 `:input/01.txt / the operation takes less than 1 ms to complete
@@ -225,7 +252,7 @@ q)\t:1000 sum -48+"j"$a where (1 rotate a)=a:first read0 `:input/01.txt / with t
 57
 ```
 
-Vector operations are where `q/kdb+` shines, and you should always strive to perform operations across lists rather than on each item in a list where possible.
+Vector operations are where `q/kdb+` shines, and you should always strive to perform operations *across* lists rather than on each item in a list where possible.
 
 ## Solving Part 2
 
@@ -269,7 +296,7 @@ q)4f rotate "12345"
   [0]  4f rotate "12345"
 ```
 
-We have a few options: rounding, casting or using the `div` operator to perform the calculation:
+We have a few options: rounding, casting or using the [div](http://code.kx.com/q/ref/arith-integer/#div) operator to perform the calculation:
 
 ```q
 q)floor 4f / rounds down to nearest whole number
@@ -306,7 +333,7 @@ q)sum value each a where a=div[count a;2] rotate a:first read0 `:input/01.txt
 
 ### Bonus 2
 
-Instead of taking the list, rotating it by half the length and comparing against the original list, we can instead split the list in two, compare the halves, and then multiply the sum by `2` (because we are only comparing half the list). The `#` operator is overloaded. When given a list of numbers as the left argument it acts as reshape:
+Instead of taking the list, rotating it by half the length and comparing against the original list, we can instead split the list in two, compare the halves, and then multiply the sum by `2` (because we are only comparing half the list). The `#` ([take](http://code.kx.com/q/ref/lists/#take)) operator is overloaded. When given a list of numbers as the left argument it acts as reshape:
 
 ```q
 q)til 6 / til n creates a range of 0 to n-1
@@ -389,6 +416,8 @@ q)2*sum value each a where (=). 2 0N#a
 q)2*sum value each a where (=). 2 0N#a:first read0 `:input/01.txt
 982
 ```
+
+>Both parts of this puzzle are complete! They provide two gold stars: **
 
 ## Complete Solution To Day 1
 

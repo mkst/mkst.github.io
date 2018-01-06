@@ -27,7 +27,7 @@ q)count a / we can double-check by counting the length of the list
 4
 ```
 
-Now let's use the `max` and `min` operators on `a`:
+Now let's use the [max](http://code.kx.com/q/ref/stats-aggregates/#max-maximum) and [min](http://code.kx.com/q/ref/stats-aggregates/#min-minimum) operators on `a`:
 
 ```q
 q)max a
@@ -63,10 +63,12 @@ q)max[a] - min[a] / we could also use square brackets for the min, but it's not 
 8
 ```
 
-Now that we have the basic building blocks we can turn this snippet into a function that will calculate the difference between biggest and smallest items in a list for *any* list of numbers we give it. A few fun facts about Q functions:
+Now that we have the basic building blocks we can turn this snippet into a function that will calculate the difference between biggest and smallest items in a list for *any* list of numbers we give it.
+
+A few fun facts about Q functions:
 
  - Functions in Q use the curly braces `{` and `}` to signify the start and end.
- - Functions in Q can take up to 3 arguments without needing to name them, or up to 8 arguments if explicitly named.
+ - Functions in Q can take up to 3 arguments without us needing to name them, or up to 8 arguments if explicitly named.
  - Arguments are declared within square brackets `[` and `]`, separated by semicolons as needed.
  - The implicit arguments are named `x`, `y` and `z`, and should be used in this order.
 
@@ -93,7 +95,7 @@ q)f 5
 6
 ```
 
-Anyhow... to turn our code into a function we need to wrap it in brackets, and change the `a` for an `x` to signify that we want to be working with the argument to the function, rather than our list called `a`:
+Anyhow... to turn our code into a function we need to wrap it in brackets, and swap out the `a` for an `x` because we want to be working with the argument to the function, rather than our list named `a`:
 
 ```q
 q){ (max x) - min x }
@@ -113,7 +115,7 @@ q){ (max x) - min x } 2 4 6 8
 
 So far, so good, however we want to run this function against *each row* of the spreadsheet (and then sum up all of these differences).
 
-Q provides a way to do this with the `each` operator.
+Q provides a way to do this with the [each](http://code.kx.com/q/ref/control/#each) operator.
 
 First build a list-of-lists with the numbers in the example:
 
@@ -132,14 +134,14 @@ q){ (max x) - min x } each a
 8 4 6
 ```
 
-... and can then use `sum` like in **Day 01** to sum up the resulting differences:
+... and can then use `sum`, like in **Day 01**, to `sum` up the resulting differences:
 
 ```q
 q)sum { (max x) - min x } each a
 18
 ```
 
-Now that we have the code to solve **Part 1**, we need to apply it to our input file so that we can get the first star.
+Now that we have the code to solve **Part 1**, we need to apply it to our [puzzle input](http://adventofcode.com/2017/day/2/input) so that we can get the first star.
 
 As with **Day 01**, we use `read0` to read in the input file:
 
@@ -161,7 +163,7 @@ q)first read0 `:input/02.txt
 "3093\t749\t3469\t142\t2049\t3537\t1596\t3035\t2424\t3982\t3290\t125\t249\t131\t118\t3138"
 ```
 
-We can use the `vs` operator to split up character lists on a particular character (or characters), in this case `"\t"`:
+We can use the [vs](http://code.kx.com/q/ref/lists/#vs) operator to split up character lists on a particular character (or characters), in this case `"\t"`:
 
 ```q
 q)"\t" vs first read0 `:input/02.txt
@@ -236,14 +238,14 @@ q)0=8 mod 2
 
 In order to find the result programatically, we can perform the modulo operation on each item in our list against the whole list and see where the result is zero. As we are performing modulo operation against each number, the matches will be where we find **two** results that are zero.
 
-We will use the each-right operator, `/:`, along with `mod`.
+We will use the [each-right](http://code.kx.com/q/ref/adverbs/#each-right) operator, `/:`, along with [mod](http://code.kx.com/q/ref/arith-integer/#mod).
 
 ```q
-q)5 9 2 8 mod/:5 9 2 8
-0 4 2 3
-5 0 2 8
-1 1 0 0
-5 1 2 0
+q)5 9 2 8 mod/:5 9 2 8 / mod 5 9 2 8 with each item on the right, 5 then 9 then 2 then 8...
+0 4 2 3 / this is 5 9 2 8 mod 5
+5 0 2 8 / this is 5 9 2 8 mod 9
+1 1 0 0 / this is 5 9 2 8 mod 2
+5 1 2 0 / this is 5 9 2 8 mod 8
 ```
 
 Or as an anonymous function:
@@ -273,7 +275,7 @@ q){ sum 0=x mod/:x } 5 9 2 8
 1 1 1 2i
 ```
 
-This seems a little odd, but is due to the fact that the `sum` operation is being performed *down* the lists, rather than *across* each one.
+This seems a little odd, but is due to the fact that the `sum` operation is being performed *down* the lists, rather than *across* each one. We can ignore this for now, as if we look *down* our results we can see that the 4th result contains two `1`s.
 
 If we add the conditional check for the `sum` being equal to `2` we get:
 
@@ -293,7 +295,7 @@ q){ x first where 2=sum 0=x mod/:x } 5 9 2 8 / where always returns a list, lets
 8
 ```
 
-If we look back, we know that the 3rd item in our list (index 2) is the other result. In order to `sum` across the list rather than down it we have two options. We can use the `each` operator such that `sum` is applied to `each` list, or we can use `flip` to rotate our results around 90-degrees, and then perform the same operations as before:
+If we look back, we know that the 3rd item in our list (index `2`) is the other result. In order to `sum` across the list rather than down it we have two options. We can use the `each` operator such that `sum` is applied to `each` list, or we can use [flip](http://code.kx.com/q/ref/lists/#flip) to rotate our results around 90-degrees, and then perform the same operations as before:
 
 ```q
 q){ sum each 0=x mod/:x } 5 9 2 8 / we can use 'sum each'
@@ -313,7 +315,7 @@ q){ x first where 2=sum flip 0=x mod/:x } 5 9 2 8
 2
 ```
 
-If we combine these two operations and return the results as a list we can get the two numbers out:
+If we combine these two operations and return the results as a list, `(result 1; result 2)`, we can get the two numbers out:
 
 ```q
 q){ (x first where 2=sum flip 0=x mod/:x;x first where 2=sum 0=x mod/:x) } 5 9 2 8
@@ -334,7 +336,7 @@ q){ (x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } 5 9 2 8
 8 2
 ```
 
-Leveraging our knowledge from **Day 01**, we know that we can pass a *list* of arguments to a function using the `.` operator. If it's a built-in operator we need to wrap it in brackets. We want to divide these numbers, so we can use the divide operator, `%`, combined with `.`:
+Leveraging our knowledge from **Day 01**, we know that we can pass a *list* of arguments to a function using the `.` operator. If it's a built-in operator we need to wrap it in brackets. We want to divide these numbers, so we can use the [divide](http://code.kx.com/q/ref/arith-float/#divide) operator, `%`, combined with `.`:
 
 ```q
 q){ (%).(x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } 5 9 2 8
@@ -362,10 +364,10 @@ q)sum { (%).(x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } each
 
 Rather than performing the modulo operation on each list with each item in the list, we can create a list of distinct pairs to check so that we are not dividing numbers by themselves. In this particular case, it is actually slightly slower - but regardless let's crack on with building this list.
 
-We can combine the `except` operator with each-right `/:` to join each item of a list with the list excluding that item:
+We can combine the [except](http://code.kx.com/q/ref/select/#except) operator with each-right `/:` to join each item of a list with the list excluding that item:
 
 ```q
-q){x except/:x}5 9 2 8
+q){x except/:x} 5 9 2 8
 9 2 8
 5 2 8
 5 9 8
@@ -375,17 +377,17 @@ q){x except/:x}5 9 2 8
 We now need to join each item in the original list with each item in these sub lists:
 
 ```q
-q){x,/:'x except/:x}5 9 2 8
+q){x,/:'x except/:x} 5 9 2 8
 5 9 5 2 5 8
 9 5 9 2 9 8
 2 5 2 9 2 8
 8 5 8 9 8 2
 ```
 
-And we can use `raze` to flatten each list into it's component pairs:
+And we can use [raze](http://code.kx.com/q/ref/lists/#raze) to flatten each list into it's component pairs:
 
 ```q
-q){raze x,/:'x except/:x}5 9 2 8
+q){raze x,/:'x except/:x} 5 9 2 8
 5 9
 5 2
 5 8
@@ -403,25 +405,25 @@ q){raze x,/:'x except/:x}5 9 2 8
 We now have a distinct list of combinations we can `mod` together in order to find the pair which divide into each other without remainder.
 
 ```q
-q){(mod).'raze x,/:'x except/:x}5 9 2 8
+q){(mod).'raze x,/:'x except/:x} 5 9 2 8
 5 1 5 4 1 1 2 2 2 3 8 0
 ```
 
 Using code from above we know we can find find the index where the result is 0
 
 ```q
-q){0=(mod).'raze x,/:'x except/:x}5 9 2 8
+q){0=(mod).'raze x,/:'x except/:x} 5 9 2 8
 000000000001b
-q){where 0=(mod).'raze x,/:'x except/:x}5 9 2 8
+q){where 0=(mod).'raze x,/:'x except/:x} 5 9 2 8
 ,11
-q){first where 0=(mod).'raze x,/:'x except/:x}5 9 2 8
+q){first where 0=(mod).'raze x,/:'x except/:x} 5 9 2 8
 11
 ```
 
 If we save the distinct list back into variable x, we can index into the distinct list at this index, and voila, we have our pair!
 
 ```q
-q){x first where 0=(mod).'x:raze x,/:'x except/:x}5 9 2 8
+q){x first where 0=(mod).'x:raze x,/:'x except/:x} 5 9 2 8
 8 2
 ```
 
@@ -447,6 +449,6 @@ q)sum (%).'{x first where 0=(mod).'x:raze x,/:'x except/:x} each "J"$ "\t" vs're
 
 ## Complete Solution To Day 2
 
-My full solution for **Day 02** is below, note that like **Day 01**, I'm saving the parsed input so that we do not have to read the input file again in **Part 2**.
+My full solution for **Day 02** is below, note that like **Day 01**, I'm saving the parsed input so that we do not have to `read0` the input file again for **Part 2**.
 
 <pre class="q" id='solution'></pre>

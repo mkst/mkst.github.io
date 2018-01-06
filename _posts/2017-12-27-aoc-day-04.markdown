@@ -25,7 +25,7 @@ q)b:("aa";"bb";"cc";"dd";"aa")
 q)c:("aa";"bb";"cc";"dd";"aaa")
 ```
 
-Let's count the lengths of these lists
+Let's `count` the lengths of these lists
 
 ```q
 q)count a
@@ -36,7 +36,7 @@ q)count c
 5
 ```
 
-In order to remove duplicates from a list, we can use the Q keyword `distinct`
+In order to remove duplicates from a list, we can use the Q keyword [distinct](http://code.kx.com/q/ref/search/#distinct)
 
 ```q
 q)distinct a
@@ -91,7 +91,7 @@ q){(count distinct x)=count x} c
 1b
 ```
 
-Now that we can check whether a given input is a valid passphrase, we can look at our input file and work towards getting today's first star.
+Now that we can check whether a given input is a valid passphrase, we can look at our [puzzle input](http://adventofcode.com/2017/day/4/input) and work towards getting today's first star.
 
 ```q
 q)read0 `:input/04.txt
@@ -133,7 +133,7 @@ q){(count distinct x)=count x} each (" " vs) each read0 `:input/04.txt
 111111101000111110111111010111111001111001001111110101011110101101011111001110111110110111111111111111110010101111110100101100111111111011011111011100111111111111011110011101111111111111110111100010101010101101101010011111001101110011111..
 ```
 
-... and if we sum up this boolean list, we get the total count of valid passphrases, and our first star!
+... and if we `sum` up this boolean list, we get the total count of valid passphrases, and our first star!
 
 ```q
 q)sum {(count distinct x)=count x} each (" " vs) each read0 `:input/04.txt
@@ -146,7 +146,7 @@ q)sum {(count distinct x)=count x} each (" " vs) each read0 `:input/04.txt
 
 One approach to solving this, would be to create permutations of each word in each list, and see whether there are multiple instances, but a more simple way is to sort each word in the list (such that any anagrams become equal), and then apply the `distinct` operator as in **Part 1**.
 
-The operator `asc` is used to sort a list into ascending order, however if we apply this to the examples, it will sort the list itself, rather than sorting each word in the list.
+The operator [asc](http://code.kx.com/q/ref/sort/#asc) is used to sort a list into **asc**ending order, however if we apply this to the examples, it will sort the list itself, rather than sorting each word in the list.
 
 ```q
 q)asc ("abcde";"xyz";"ecdab")
@@ -190,7 +190,7 @@ We can then reuse part of the code from **Part 1** to give us the following func
 { (count x)=count distinct asc each x }
 ```
 
-Feeding in each line of our parsed input will give us the boolean list of valid passphrases, which we can sum up to get our second star
+Feeding in each line of our parsed input will give us the boolean list of valid passphrases, which we can `sum` up to get our second star
 
 ```q
 q){ (count x)=count distinct asc each x } each (" " vs) each read0 `:input/04.txt

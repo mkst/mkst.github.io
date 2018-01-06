@@ -7,7 +7,7 @@ categories: aoc tutorial
 
 # Day 0 - Firing up our first q/kdb+ session
 
-Getting started with q/kdb+ isn't quite as straightforward as simply downloading the binary file and double-clicking. You can read through the *official* getting started guide on the kx wiki, or you can follow the steps below.
+Getting started with q/kdb+ isn't quite as straightforward as simply downloading the binary file and double-clicking. You can read through the *official* getting started guide on the [KX Wiki](http://code.kx.com/q/tutorials/install/), or you can follow the steps below.
 
 **Note:** Windows and Mac instructions will follow later...
 

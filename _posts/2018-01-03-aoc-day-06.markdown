@@ -25,16 +25,18 @@ q)max 0 2 7 0
 7
 ```
 
-We know the maximum of the list, but not *where* it is in the list. Leveraging some code from **Day 01** allows us to build the following snippet which give us the indices of the list where the maximum occurs:
+We know the maximum of the list, but not *where* it occurs in the list. Leveraging some code from **Day 01** allows us to build the following snippet which give us the indices of the list where the maximum occurs:
 
 ```q
-q)7=0 2 7 0
+q)7=0 2 7 0 / where the list is equal to 7
 0010b
-q)where 7=0 2 7 0
+q)(max 0 2 7 0)=0 2 7 0 / without hardcoding the 7
+0010b
+q)where (max 0 2 7 0)=0 2 7 0 / use where to get the indices where the list is true
 ,2
-q){ where (max x)=x } 0 2 7 0 / turn it into a lambda to make it general
+q){ where (max x)=x } 0 2 7 0 / turn it into a lambda to make it more general
 ,2
-q){ where x=max x } 0 2 7 0 / switching around means we can avoid using brackets
+q){ where x=max x } 0 2 7 0 / switching around the conditions means we can avoid brackets
 ,2
 ```
 
@@ -55,20 +57,20 @@ q)w
 
 The instructions tell us that we need to redistribute the blocks found at this location across the other indices in the list.
 
-In order to perform this round-robin we can use the `til` operator to determine which indices will receive a share of the redistributed blocks.
+In order to perform this round-robin we can use the [til](http://code.kx.com/q/ref/arith-integer/#til) operator to create a range of the indices that will receive a share of the redistributed blocks.
 
 In our example we know that there are `7` blocks to be distributed (the `max` of the list), and we should start at the next index on from `w`. Note that `til` starts from zero.
 
 ```q
 q)til 7 / til x generates the range of 0..(x-1)
 0 1 2 3 4 5 6
-q)w + til 7 / add our current offset w
+q)w + til 7 / add our current index w as an offset
 2 3 4 5 6 7 8
-q)1 + w + til 7 / and add one more as we need to start from the next index
+q)1 + w + til 7 / and add one more as we need to start from the *next* index
 3 4 5 6 7 8 9
 ```
 
-This suggests that we need to distribute the blocks to indices 4 and higher - but our list only contains `4` entries, so this won't work as-is. We need to use the modulo operator, `mod`, to perform the wrap-around for us. We know our list has `4` entries so let's try `mod` our indices by `4`
+This suggests that we need to distribute the blocks to indices `4` and higher - but our list only contains `4` entries, so this won't work as-is. We need to use the modulo operator, `mod`, to perform the wrap-around for us. We know our list has `4` entries so let's `mod` our indices by `4`
 
 ```q
 q)(1 + w + til 7) mod 4 / mod the left by the right
@@ -79,9 +81,9 @@ q)mod[;4] 1 + w + til 7 / or using projections
 3 0 1 2 3 0 1
 ```
 
-We now know which indices will be receiving the redistrubuted blocks, we need to perform the redistribution.
+We now know which indices will be receiving the redistributed blocks, we need to perform the redistribution.
 
-It would be handy to have a `count` of blocks that should be distributed to each index. We can use the `group` operator to get us halfway there:
+It would be handy to have a `count` of blocks that should be distributed to each index. We can use the [group](http://code.kx.com/q/ref/dictsandtables/#group) operator to get us halfway there:
 
 ```q
 q)group mod[;4] 1 + w + til 7
@@ -91,7 +93,7 @@ q)group mod[;4] 1 + w + til 7
 2| ,3
 ```
 
-This groups the distinct values in the list as keys in a dictionary, with the values of the dictionary being the indices that the keys can be found.
+This groups the distinct values in the list as keys of a dictionary, with the values of the dictionary being the indices that the keys can be found.
 
 We can then `count each` entry in our dictionary to get the number of blocks that each index should receive:
 
@@ -122,7 +124,7 @@ q)value b
 2 2 2 1
 ```
 
-A very versatile operation in Q is the apply function `@`. It can be used with a varying number of parameters, doing a different thing in each case.
+A very versatile operation in Q is the [amend](http://code.kx.com/q/ref/lists/#amend) function `@`. It can be used with a varying number of parameters, doing a different thing in each case.
 
 We will be using it with `4` parameters. It works in the following manner:
 
@@ -141,7 +143,7 @@ q)@[0 2 7 0;3 0 1 2;+;2 2 2 1]
 
 This has applied the addition operator `+` to the list `0 2 7 0` at indices `3 0 1 2` with parameters `2 2 2 1`. Or said another way, it has added `2`, `2`, `2` and `1` to the values at indices `3`, `0` `1` and `2` of the list `0 2 7 0`.
 
-Note that this doesn't match the example, the result *should* be `2 4 1 2` after the redistribution. We neglected to reset the maximum index to zero before we performed the redistribution!
+Note that this doesn't match the example, the result *should* be `2 4 1 2` after the redistribution. We neglected to reset the maximum of the list to zero before we performed the redistribution!
 
 It should look like this:
 
@@ -246,7 +248,7 @@ q)s
 
 And if we `count s` we will see it contains 5 states, which is the answer to the example input.
 
-Now let's move on to our input file for **Day 6**.
+Now let's move on to our [puzzle input](http://adventofcode.com/2017/day/6/input) for **Day 6**.
 
 ```q
 q)read0 `:input/06.txt
@@ -278,7 +280,7 @@ q)count s
 
 > Out of curiosity, **the debugger would also like to know the size of the loop**: starting from a state that has already been seen, how many block redistribution cycles must be performed before that same state is seen again?
 
-We have kept track of all states in variable `s`. All we need to do is determine the distance between the first occurance of the *current* state (stored in `r`) and the first time it was seen.
+We have kept track of all states in variable `s`. All we need to do is determine the distance between the first occurance of the *current* state (stored in `r`) in the list of states, `s`, and the total length of `s`.
 
 ```q
 q)first where r~/:s
@@ -293,7 +295,6 @@ q)(count s) - first where r~/:s
 ```
 
 If only all second stars were that easy to get!
-
 
 ## Complete Solution To Day 6
 

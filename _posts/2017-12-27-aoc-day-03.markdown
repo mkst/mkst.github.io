@@ -48,25 +48,27 @@ That was a lot of writing, but converting to code is a little more simple.
 
 ## Solving Part 1
 
-First translate A016754, (2n+1)<sup>2</sup>, into a Q function
+First translate [A016754](https://oeis.org/A016754), (2n+1)<sup>2</sup>, into a Q function
 
 ```q
 q)A016754:{ (1+2*x)*(1+2*x) }
 q)A016754:{ x*x:1+2*x } / minor optimisation
 q)A016754 3
 49
+q)A016754 0 1 2 3 5
+1 9 25 49 121
 ```
 
-Now we need to build a function that will return us the closest 'n' for a given result. To do that we can iterate from `x` equal to `0` until `A016754 x` exceeds the input. To do this we will leverage the following pattern:
+Now we need to build a function that will return us the closest 'n' for a given result. To do that we can iterate from `x` equal to `0` until `A016754 x` exceeds the input. To do this we will leverage the [repeat](http://code.kx.com/q/ref/adverbs/#converge-repeat) pattern:
 
 ```q
-{ }/[{};] / perform the action in the left-most lambda until the result of the second lambda is true
+{}/[{};] / perform the action in the left-most lambda until the result of the second lambda is true
 ```
 
 Let's fill it out with our example, `36`
 
 ```q
-{ x+1 }/[{ 36 > A016754 x};0]
+{ x+1 }/[{ 36 > A016754 x};0] / start with x as 0
 ```
 
 This will loop until `A016754 x` exceeds `36`
@@ -117,7 +119,7 @@ q)(36 - A016754 2) mod floor 0.25*(A016754 3)-A016754 2
 5
 ```
 
-Now, we need to take this away from *half* the length of the side of the spiral (`3`), then take the `abs` of this:
+Now, we need to take this away from *half* the length of the side of the spiral (`3`), then take the **abs**olute value of this using the [abs](http://code.kx.com/q/ref/arith-integer/#abs) operator:
 
 ```q
 q)3 - (36 - A016754 2) mod floor 0.25*(A016754 3)-A016754 2
@@ -191,7 +193,7 @@ Let's call our current location `l`
 q)l:0 0 / start at the origin
 ```
 
-We start our grid with a `1` at the origin. Let's call our grid `g`and initialise the first value to `1`. Note that a dictionary cannot be initialised with atoms (single elements), thus we need to `enlist` the starting values to avoid a length error. We also need to wrap the left portion in brackets to force it to be evaluated together
+We start our grid with a `1` at the origin. Let's call our grid `g`and initialise the first value to `1`. Note that a dictionary cannot be initialised with atoms (single elements), thus we need to [enlist](http://code.kx.com/q/ref/lists/#enlist) the starting values to avoid a length error. We also need to wrap the left portion in brackets to force it to be evaluated together
 
 ```q
 q)g:(enlist l)!enlist 1 / bootstrap
@@ -261,7 +263,7 @@ q)"b"$g l +/:(0 1;1 0;0 -1;-1 0) / not what we want...
 1111b
 ```
 
-Therefore we must use the fill operator `^` to replace instances of nulls with zeroes, `0^`. If we then cast this to booleans we get what we expect.
+Therefore we must use the [fill](http://code.kx.com/q/ref/lists/#fill) operator `^` to replace instances of nulls with zeroes, `0^`. If we then cast this to booleans we get what we expect.
 
 ```q
 q)0^g l +/:(0 1;1 0;0 -1;-1 0)

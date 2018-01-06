@@ -1,0 +1,517 @@
+---
+layout: post
+title:  "Advent of Code 2017, Day 07"
+date:   2018-01-04 08:00:00 +0000
+categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/07.q', 'solution')
+---
+
+# Day 7: Recursive Circus
+
+> You ask each program to yell out their **name, their weight, and (if they're holding a disc) the names of the programs immediately above them** balancing on that disc. You write this information down (your puzzle input).
+
+We have a tree structure with a single program (node) as the parent, and multiple child nodes, each of which may also have children (and so on).
+
+In order to get today's first star we need to identify the parent node; that is, the node that does not have any parents.
+
+## Solving Part 1
+
+We ought to be able to represent our puzzle input in a table. We need to keep track of `node`, `weight` and the `parent` of that node. We should then be able to select from our table where the node has no parent, and get the first star.
+
+The datatypes will be `symbol`, `long` and `symbol` respectively.
+
+We can create an empty table in a few different ways:
+
+```q
+q)([] node:(); weight:(); parent:()) / no datatypes defined for the columns
+node weight parent
+------------------
+q)([] node:`symbol$(); weight:`long$(); parent:`symbol$()) / datatypes defined
+node weight parent
+------------------
+q)flip `node`weight`parent!"sjs"$\:() / datatypes defined, shortcut method using each-left casting
+node weight parent
+------------------
+```
+
+As there should only be a single entry for each node, we can enforce this by making `node` a primary key:
+
+```q
+q)([node:()] weight:(); parent:()) / keys are inside the square brackets
+node| weight parent
+----| -------------
+q)([node:`symbol$()] weight:`long$(); parent:`symbol$()) / and we lose the semicolon
+node| weight parent
+----| -------------
+q)`node xkey flip `node`weight`parent!"sjs"$\:() / use xkey to key the table
+node| weight parent
+----| -------------
+q)1!flip `node`weight`parent!"sjs"$\:() / use 1! to key the table by the first column
+node| weight parent
+----| -------------
+```
+
+We can assign our table to variable `t`
+
+```q
+q)t:`node xkey flip `node`weight`parent!"sjs"$\:() / my preferred way of creating a table
+```
+
+Now we need to populate our table with data from the example:
+
+```
+pbga (66)
+xhth (57)
+ebii (61)
+havc (66)
+ktlj (57)
+fwft (72) -> ktlj, cntj, xhth
+qoyq (66)
+padx (45) -> pbga, havc, qoyq
+tknk (41) -> ugml, padx, fwft
+jptl (61)
+ugml (68) -> gyxo, ebii, jptl
+gyxo (61)
+cntj (57)
+```
+
+We can see that some lines contain only the `node` and it's `weight`, and some lines contain the  children of the node.
+
+Let's save the example input as `input/07x.txt` and then read in the `first` line:
+
+```q
+q)first read0 `:input/07x.txt
+"pbga (66)"
+```
+
+We can also access the same line by indexing in to the result of `read0` operation
+
+```q
+q)(read0 `:input/07x.txt) 0 / taking the first line
+"pbga (66)"
+q)(read0 `:input/07x.txt) 7 / taking the eighth line
+"padx (45) -> pbga, havc, qoyq"
+```
+
+Now remove the brackets, `()`, and commas, `,`, with the `except` keyword. Note that we will use it as a projection here in order to keep the same ordering of commands
+
+```q
+q)except[;"(),"] (read0 `:input/07x.txt) 0 / this makes it easy to switch out the zero
+"pbga 66"
+q)except[;"(),"] (read0 `:input/07x.txt) 7 / for a seven like this...
+"padx 45 -> pbga havc qoyq"
+q)except[(read0 `:input/07x.txt) 7;"(),"] / but we could write it like this
+"padx 45 -> pbga havc qoyq"
+q)((read0 `:input/07x.txt) 7) except "()," / or like this using round brackets
+"padx 45 -> pbga havc qoyq"
+```
+
+Now the input is looking closer to something we can use.
+
+Let's use `vs` to split the line on the space character, `" "`
+
+```q
+q)" " vs except[;"(),"] (read0 `:input/07x.txt) 0
+"pbga"
+"66"
+q)" " vs except[;"(),"] (read0 `:input/07x.txt) 7
+"padx"
+"45"
+"->"
+"pbga"
+"havc"
+"qoyq"
+```
+
+If we have a line which just contains a `node`, we want add the `node` to the table along with its `weight`.
+
+If we have a line which contains a `node` and its children, we want to add the `node` to the table, and then set the `parent` node as the current `node` for each of the children.
+
+Regardless of whether the line contains the children, we want to add the current `node` and its `weight` to the table.
+
+If we assign the result of our manipulation to the variable `l` we can then easily index into it to pull out the `node` and `weight` (and any children)
+
+```q
+q)l:" " vs except[;"(),"] (read0 `:input/07x.txt) 0
+q)l 0 / this is the node
+"pbga"
+q)l 1 / this is the weight
+"66"
+```
+
+In order to put these values into our table, we need to cast them to the correct types. In order to cast a character list (*string*) to a symbol we must use `` `$ `` like so
+
+```q
+q)`$"abcd"
+`abcd
+q)`$l 0
+`pbga
+```
+
+In order to cast a string  to a long we can either use the big-J cast, or the `value` operator
+
+```q
+q)"J"$"1234"
+1234
+q)"J"$l 1
+66
+q)value l 1
+66
+```
+
+We can try to `upsert` these two values into our table `t` but we will get a `length` error
+
+```q
+q)t upsert (`pbga;66)
+'length
+  [0]  t upsert (`pbga;66)
+```
+
+This is because our table has *three* colunms, `node`, `weight`, and `parent`, and we are trying to push *two* columns worth of data into it.
+
+For now let's set the value going into our `parent` column to `null`. The null symbol is a single backtick, `` ` ``.
+
+```q
+q)t upsert (`pbga;66;`) / hardcode the values for now
+node| weight parent
+----| -------------
+pbga| 66
+```
+
+Now with the values taken by indexing into `l` and casting
+
+```q
+q)t upsert (`$l 0;"J"$l 1;`)
+node| weight parent
+----| -------------
+pbga| 66
+```
+
+Good stuff... however if we check what's in our table, we'll see that it's empty!
+
+```q
+q)t
+node| weight parent
+----| -------------
+```
+
+In order to commit our `upsert`, we need to use a backtick when refering to the table:
+
+```q
+q)`t upsert (`$l 0;"J"$l 1;`)
+`t
+q)t
+node| weight parent
+----| -------------
+pbga| 66
+```
+
+Much better.
+
+Now let's write some code that will set the parent node for a number of child nodes.
+
+If we remove the first 3 items from lines that contain children, we will be left with just the children.
+
+We can do this using the drop operator, `_`
+
+```q
+q)l:" " vs except[;"(),"] (read0 `:input/07x.txt) 7 / use the eighth line of example input
+q)l / remind ourselves how l looks
+"padx"
+"45"
+"->"
+"pbga"
+"havc"
+"qoyq"
+q)3 _ l / drop the first 3 from the list
+"pbga"
+"havc"
+"qoyq"
+```
+
+We can feed `each` of these children into a lambda function that will `upsert` each one into our table `t`. In order to do this we will create the lambda as a projection, with the first argument being the parent node, `l 0`. We can explicitly name the arguments being passed into the lambda for clarity:
+
+```q
+q){[parent;node] }[l 0;] each 3 _ l / note the return value is null, ::
+::
+::
+::
+```
+
+We only have two values for our table, we have the `node` and the `parent`... we do not have the weight.
+
+We can use a `null` again, in this case we can use the `null` long, `0N`
+
+```q
+q){[parent;node] `t upsert (`$node;0N;`$parent)}[l 0;] each 3 _ l
+`t`t`t
+```
+
+We can move the casting outside of the lambda:
+
+```q
+q){[parent;node] `t upsert (node;0N;parent)}[`$l 0;] each `$3 _ l
+`t`t`t
+```
+
+Note that as we are using `upsert` we will overwrite the existing values in the table for the given primary key, `node`. If we use `insert` instead get a key error:
+
+```q
+q){[parent;node] `t insert (`$node;0N;`$parent) }[l 0;] each 3 _ l
+'insert
+  [2]  {[parent;node] `t insert (`$node;0N;`$parent) }
+q))\ / we have to use a single backslash to get out of the error trap
+q)
+```
+
+The super-observant amongst you may have noticed that in upserting null values for `parent` (in the first step) and `weight` (in the lambda) we would overwrite any existing value.
+
+For example, once we process the following line
+
+```
+pbga (66)
+```
+
+We will have a table that looks like this:
+
+```q
+node| weight parent
+----| -------------
+pbga| 66
+```
+
+... but after we process the line where we discover that `pbga` is a child of `padx`
+
+```
+padx (45) -> pbga, havc, qoyq
+```
+
+We will have overwritten `pbga`'s weight as `0N`
+
+```q
+
+node| weight parent
+----| -------------
+pbga|        padx
+havc|        padx
+qoyq|        padx
+padx| 45
+```
+
+Similarly, if we were to process the `padx (45) -> pbga, havc, qoyq` line *before* `pbga (66)`, we would end up overwriting the parent value for `pbga` as `` ` `` (null symbol).
+
+In order to get around this we need to use the value for `parent` if it already exists, and the value for `weight` if it already exists.
+
+There are a few ways to pull out the `parent` for a given node:
+
+```q
+q)select from t where node = `pbga
+node| weight parent
+----| -------------
+pbga|        padx
+q)select parent from t where node = `pbga
+parent
+------
+padx
+q)exec parent from t where node = `pbga
+,`padx
+q)first exec parent from t where node = `pbga
+`padx
+```
+
+However, as the table is keyed on `node`, we can use the `node` we are after to index into the table
+
+```q
+q)t[`pbga] / we can use square brackets
+weight| 0N
+parent| `padx
+q)t `pbga / or we can do a naked indexing
+weight| 0N
+parent| `padx
+```
+
+Q allows for nested indexing, so we can jump straight to the `parent` for a given `node` in the table like so
+
+```q
+q)t[`pbga; `parent]
+`padx
+```
+
+... and the `weight` like so
+
+```q
+q)t[`pbga; `weight] / this is null because we overwrote it in the lambda!
+0N
+```
+
+Now we need to update our `upsert` operations. Firstly instead of upserting a hardcoded null symbol, `` ` ``, as the `parent`, we can upsert `` t[node;`parent] ``.
+
+```q
+q)`t upsert (`$l 0;"J"$l 1;t[`$l 0;`parent]) / perhaps we should save $l 0 as 'node' for simplicity?
+`t
+```
+
+.. and instead of upserting a hardcoded null long, `0N`, as the `weight` when processing children, we can upsert `` t[node;`weight`] ``
+
+```q
+q){[parent;node] `t upsert (node;t[node;`weight];parent)}[`$l 0;] each `$3 _ l
+`t
+```
+
+Let's clear out our table `t` and `upsert` lines 0 and 7 from the input file:
+
+```q
+q)delete from `t / delete everything from table t, saving the result back into t
+`t
+q)t / confirm that it's empty
+node| weight parent
+----| -------------
+q)l:" " vs except[;"(),"] (read0 `:input/07x.txt) 0 / read in the first line
+q)l / check that it looks as expected
+"pbga"
+"66"
+q)`t upsert (`$l 0;"J"$l 1;t[`$l 0;`parent])
+`t
+q)t
+node| weight parent
+----| -------------
+pbga| 66
+q)l:" " vs except[;"(),"] (read0 `:input/07x.txt) 7 / read in the eighth line
+q)l
+"padx"
+"45"
+"->"
+"pbga"
+"havc"
+"qoyq"
+q)`t upsert (`$l 0;"J"$l 1;t[`$l 0;`parent])
+`t
+q)t
+node| weight parent
+----| -------------
+pbga| 66
+padx| 45
+q){[parent;node] `t upsert (node;t[node;`weight];parent)}[`$l 0;] each `$3 _ l
+`t`t`t
+q)t
+node| weight parent
+----| -------------
+pbga| 66     padx
+padx| 45
+havc|        padx
+qoyq|        padx
+```
+
+Now that we can parse the two types of input line (with or without children), we need to build a function that we can apply to `each` line of the input file.
+
+In psuedo-code, we want to do something like this:
+
+```
+for each line in the input:
+  remove brackets and commas and split on " "
+  add the first two items of this list to the table
+  if there are more items
+    update parent for each child
+```
+
+Converting this into Q, and using the snippets we created earlier, gives us the following function
+
+```q
+{ l:" " vs x except "(),";
+  `t upsert (`$l 0;"J"$l 1;t[`$l 0;`parent]);
+  if[3<count l;
+    {[parent;node] `t upsert (node;t[node;`weight];parent)}[`$l 0;] each `$3_l
+  ]
+  } each read0 `:input/07x.txt
+```
+
+There is a lot of repetition of the `` `$l 0 ``, so let's call that `n` for node:
+
+```q
+{ l:" " vs x except "(),"; / line
+  n:`$l 0; / node
+  `t upsert (n;"J"$l 1;t[n;`parent]); / update weight for node
+  if[3<count l;
+    {[parent;node] `t upsert (node;t[node;`weight];parent)}[n;] each `$3_l / update parent for node
+  ]
+  } each read0 `:input/07x.txt
+```
+
+The size of this function means that we really need to be working with a text editor, saving the result and then loading it up into the Q process.
+
+Assuming we've saved this function in a file called `07.q`, we can load it up in a couple of different ways.
+
+From the shell, loading the script along with the q executable:
+
+```sh
+$ q32 07.q # load up from the shell
+```
+
+Or, directly within the Q session:
+
+```q
+q)\l 07.q
+```
+
+However, we need to define the table, `t`, before we try running a function that upserts values into that table. Out `07.q`file should look like this:
+
+```q
+t:`node xkey flip `node`weight`parent!"sjs"$\:()
+
+{ l:" " vs x except "(),"; / line
+  n:`$l 0; / node
+  `t upsert (n;"J"$l 1;t[n;`parent]); / update weight for node
+  if[3<count l;
+    {[parent;node] `t upsert (node;t[node;`weight];parent)}[n;] each `$3_l / update parent for node
+  ]
+  } each read0 `:input/07x.txt
+```
+
+If we load up our `07.q` file and then check our table, it should look something like this
+
+```q
+q)\l 07.q
+(::;::;::;::;::;::;::;::;::;::;::;::;::)
+q)t
+node| weight parent
+----| -------------
+pbga| 66     padx
+xhth| 57     fwft
+ebii| 61     ugml
+havc| 66     padx
+ktlj| 57     fwft
+fwft| 72     tknk
+cntj| 57     fwft
+qoyq| 66     padx
+padx| 45     tknk
+tknk| 41
+ugml| 68     tknk
+jptl| 61     ugml
+gyxo| 61     ugml
+```
+
+From a quick glance it's easy to see that `tknk` has nothing in the parent columnm, and is thus the overall parent, or "at the bottom of the tower" in AoC parlance. In order to pull out the entry without a parent we can use the following Q statement:
+
+```q
+q)first exec node from t where null parent
+`tknk
+```
+
+This matches the answer for the example, if we edit our `07.q` file to change the input file to `07.txt` and then load up again, we can get the first star for today:
+
+```q
+q)\l 07.q
+(::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::;::..
+q)first exec node from t where null parent
+`hlqnsbe
+```
+
+## Solving Part 2
+
+**TODO**
+
+## Complete Solution To Day 7
+
+My full solution for **Day 07** is below:
+
+<pre class="q" id='solution'></pre>
