@@ -2,11 +2,14 @@
 layout: post
 title:  "Advent of Code 2017, Day 01"
 date:   2017-12-26 08:15:00 +0000
+last_updated: 2018-01-06
 categories: aoc tutorial
 onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/01.q', 'solution')
 ---
 
 # Day 1: Inverse Captcha
+
+Welcome to **Day 1**. Take a read through the [challenge text](http://adventofcode.com/2017/day/1) for today, the crux of the challenge is quoted below (emphasis added).
 
 > The captcha requires you to review a sequence of digits (your puzzle input) and find the **sum** of all **digits that match the next digit** in the list. The **list is circular**, so the digit after the last digit is the first digit in the list.
 
@@ -18,7 +21,7 @@ If we were to solve this in [Python](https://www.python.org/), we might do somet
 with open("input/01.txt") as f:
   l = f.readline()[:-1]            # drop the trailing "\n" character
   m = []                           # our list of matches
-  for i in range(len(l)):
+  for i in range(len(l)):          # loop through our list
     if l[i] == l[(i+1) % len(l)]:  # check current against next (modulo to wrap-around)
       m.append(l[i])               # add the match to list m
   print sum(map(int, m))           # convert to ints and sum up
@@ -28,7 +31,7 @@ However, we are going to solve the problem in Q, and we should aim to avoid loop
 
 ## Solving Part 1
 
-The examples given are `1122`, `1111`, `1234` and `91212129`, with answers of `3`, `4`, `0` and `9` respectively. Let's start by trying to solve for the first example; `1122`.
+The examples given are `1122`, `1111`, `1234` and `91212129`, with answers of `3`, `4`, `0` and `9` respectively. Let's start by trying to solve the first example; `1122`.
 
 Rather than iterating over the list of numbers and checking against the next, we can shift the numbers one step to the left, and then compare them. `1234` shifted one to the left is `2341` as the `1` wraps back around to the end, thus `1122` shifted one to the left is `1221`. We can then compare `1` against `1`, `1` against `2`, `2` against `2` and `2` against `1`.
 
@@ -50,7 +53,18 @@ q)a:"1122" / assign "1122" to variable a with assignment operator :
 q)b:"1221" / "1122" rotated one to the left and saved as variable b
 ```
 
-We can then use the equality operator `=` to see where the lists match:
+We can use the equality operator `=` to compare equal-length items in Q, here are some simple examples:
+
+```q
+q)"1"="1" / this will be true, note the 'b' for boolean
+1b
+q)"1"="2" / this will be false
+0b
+q)"12"="11" / this will be (true;false)
+10b
+```
+
+Let's use `=` on our lists to see where they are equal:
 
 ```q
 q)b=a / = decends into the list and compares each item one-by-one, the result is a boolean list
@@ -76,11 +90,11 @@ This yields indices `0` and `2`, which is a `"1"` and a `"2"` (note [0-indexing]
 We can then use these indices to index back into either of the variables to pull out the matches:
 
 ```q
-q)a 0
+q)a 0 / index in at position 0 (the first character)
 "1"
-q)a 2
+q)a 2 / index in at position 2 (the third character)
 "2"
-q)a 0 2
+q)a 0 2 / index in at positions 0 and 2 (first and third characters)
 "12"
 q)b 0 2 / naturally this gives the same result, we're using the indices where the lists match!
 "12"
@@ -95,7 +109,7 @@ q)sum a where b=a
 99i
 ```
 
-This is because when we try to perform `sum` on a list of characters, it takes their ASCII values (`49` and `50` respectively) and sums *them* up. We want to add `1` and `2`, so we need to convert the characters to integers (or technically *longs*). There are a few ways to skin a cat, and there are a few ways to convert the character list `"12"` to the long list `1 2` in Q:
+This is because when we try to perform `sum` on a list of characters, it takes their [ASCII](https://en.wikipedia.org/wiki/ASCII) values (`49` and `50` respectively) and sums *them* up. We want to add `1` and `2`, so we need to convert the characters to integers (or technically *longs*). There are a few ways to skin a cat, and there are a few ways to convert the character list `"12"` to the long list `1 2` in Q:
 
 ```q
 q)value each "12" / take the value of each item on the right
@@ -118,6 +132,8 @@ q)"J"$"12"
 Putting this all together with `sum` gives us the correct result for the first example:
 
 ```q
+q)value each a where b=a
+1 2
 q)sum value each a where b=a
 3
 ```
@@ -157,13 +173,13 @@ q)b
 However, we do not need to define `b` at all, we can use the result of rotating `a` like so
 
 ```q
-q)rotate[1;a]=a / some people prefer square backets...
+q)(1 rotate a)=a / some people prefer round brackets...
 1010b
-q)(1 rotate a)=a / ...and some people prefer round ones
+q)rotate[1;a]=a / ... and some people prefer to use square ones
 1010b
 ```
 
-**Note:** We need to wrap the `1 rotate a` in brackets to ensure it is evaluated together, otherwise we will end up performing `1 rotate` on `a=a`!
+**Note:** We need to wrap the `1 rotate a` in brackets to ensure it is evaluated together, otherwise we will end up performing the `1 rotate` on `a=a`!
 
 ```q
 q)1 rotate a=a / this will always return a list of true values
@@ -173,9 +189,9 @@ q)1 rotate a=a / this will always return a list of true values
 Whether we use the square bracket notation or wrap the rotation in rounded ones, we've now got a piece of code that can solve **Part 1**:
 
 ```q
-q)sum value each a where rotate[1;a]=a / some people prefer square backets...
+q)sum value each a where rotate[1;a]=a / square backet notation
 3
-q)sum value each a where (1 rotate a)=a / ...and some people prefer round ones
+q)sum value each a where (1 rotate a)=a / wrapping in round brackets instead
 3
 ```
 
@@ -188,7 +204,7 @@ q)read0 `:input/01.txt
 "89219596999173583791527386872954869423796749511541239937319456252694758533723379356827826527919988319716763479129317798615256623671833261753648723687974716799998336383225791244575688731487922992586447776135713985554852251379889985389661..
 ```
 
-... and this looks precisely what we need. However if we use [count]() to check the length of the object, we find that it has size of `1`, and is in fact a mixed list:
+... and this looks like precisely what we need. However if we use [count](http://code.kx.com/q/ref/lists/#count) to check the length of the object, we find that it has size of `1`, and is in fact a mixed list:
 
 ```q
 q)count read0 `:input/01.txt
@@ -197,7 +213,7 @@ q)type read0 `:input/01.txt
 0h
 ```
 
-This is because `read0` will split the input file on newlines and return a list. As there is only a single line in our input file, we can take the `first`, which will give us the input as a list of characters:
+This is because `read0` will split the input file on newlines and return a list. As there is only a single line in our input file, we can take the [first](http://code.kx.com/q/ref/select/#first) result, which will give us the input as a list of characters:
 
 ```q
 q)first read0 `:input/01.txt
@@ -410,7 +426,7 @@ q)2*sum value each a where (=). 2 0N#a
 4
 ```
 
-... and feeding in our input file:
+... and feeding in our puzzle input:
 
 ```q
 q)2*sum value each a where (=). 2 0N#a:first read0 `:input/01.txt

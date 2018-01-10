@@ -2,11 +2,16 @@
 layout: post
 title:  "Advent of Code 2017, Day 03"
 date:   2017-12-27 08:00:00 +0000
+last_updated: 2018-01-06
 categories: aoc tutorial
 onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/03.q', 'solution')
 ---
 
 # Day 3: Spiral Memory
+
+**Note:** **Day 3** is a significant step-up in complexity compared to the Days **1** and **2** (and **4**, **5** and **6** for that matter).
+
+Take a read through the [challenge text](http://adventofcode.com/2017/day/3) for **Day 3**, the crux of the challenge is quoted below (emphasis added).
 
 > Each square on the grid is allocated in a spiral pattern starting at a location marked 1 and then **counting up while spiraling outward**.
 
@@ -421,6 +426,6 @@ And the answer to **Part 2** is now simply the value of the current location `g 
 
 ## Complete Solution To Day 3
 
-My full solution for **Day 03** is below:
+My full solution for **Day 3** is below:
 
 <pre class="q" id='solution'></pre>

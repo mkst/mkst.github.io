@@ -2,11 +2,14 @@
 layout: post
 title:  "Advent of Code 2017, Day 02"
 date:   2017-12-27 08:00:00 +0000
+last_updated: 2018-01-06
 categories: aoc tutorial
 onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/02.q', 'solution')
 ---
 
 # Day 2: Corruption Checksum
+
+One day down, 24 to go! Take a read through the [challenge text](http://adventofcode.com/2017/day/2) for **Day 2**, the crux of the challenge is quoted below (emphasis added).
 
 > The spreadsheet consists of rows of apparently-random numbers. To make sure the recovery process is on the right track, they need you to calculate the spreadsheet's checksum. For each row, **determine the difference between the largest value and the smallest value**; the checksum is the **sum of all of these differences**.
 
@@ -134,7 +137,7 @@ q){ (max x) - min x } each a
 8 4 6
 ```
 
-... and can then use `sum`, like in **Day 01**, to `sum` up the resulting differences:
+... and can then use `sum`, like in **Day 1**, to `sum` up the resulting differences:
 
 ```q
 q)sum { (max x) - min x } each a
@@ -143,7 +146,7 @@ q)sum { (max x) - min x } each a
 
 Now that we have the code to solve **Part 1**, we need to apply it to our [puzzle input](http://adventofcode.com/2017/day/2/input) so that we can get the first star.
 
-As with **Day 01**, we use `read0` to read in the input file:
+As with **Day 1**, we use `read0` to read in the input file:
 
 ```q
 q)read0 `:input/02.txt
@@ -336,7 +339,7 @@ q){ (x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } 5 9 2 8
 8 2
 ```
 
-Leveraging our knowledge from **Day 01**, we know that we can pass a *list* of arguments to a function using the `.` operator. If it's a built-in operator we need to wrap it in brackets. We want to divide these numbers, so we can use the [divide](http://code.kx.com/q/ref/arith-float/#divide) operator, `%`, combined with `.`:
+Leveraging our knowledge from **Day 1**, we know that we can pass a *list* of arguments to a function using the `.` operator. If it's a built-in operator we need to wrap it in brackets. We want to divide these numbers, so we can use the [divide](http://code.kx.com/q/ref/arith-float/#divide) operator, `%`, combined with `.`:
 
 ```q
 q){ (%).(x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } 5 9 2 8
@@ -449,6 +452,6 @@ q)sum (%).'{x first where 0=(mod).'x:raze x,/:'x except/:x} each "J"$ "\t" vs're
 
 ## Complete Solution To Day 2
 
-My full solution for **Day 02** is below, note that like **Day 01**, I'm saving the parsed input so that we do not have to `read0` the input file again for **Part 2**.
+My full solution for **Day 2** is below, note that like **Day 1**, I'm saving the parsed input so that we do not have to `read0` the input file again for **Part 2**.
 
 <pre class="q" id='solution'></pre>

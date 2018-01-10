@@ -2,11 +2,14 @@
 layout: post
 title:  "Advent of Code 2017, Day 07"
 date:   2018-01-04 08:00:00 +0000
+last_updated: 2018-01-10
 categories: aoc tutorial
 onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/07.q', 'solution')
 ---
 
 # Day 7: Recursive Circus
+
+Day 7 already? You know the drill. Take a read through the [challenge text](http://adventofcode.com/2017/day/7). I've quoted the key paragraph below (emphasis added). Be aware that this post uses lots of functionality we've not seen in the previous days' solutions.
 
 > You ask each program to yell out their **name, their weight, and (if they're holding a disc) the names of the programs immediately above them** balancing on that disc. You write this information down (your puzzle input).
 
@@ -159,7 +162,7 @@ q)value l 1
 66
 ```
 
-We can try to `upsert` these two values into our table `t` but we will get a `length` error
+We can try to [upsert](http://code.kx.com/q/ref/qsql/#upsert) these two values into our table `t` but we will get a `length` error
 
 ```q
 q)t upsert (`pbga;66)
@@ -195,7 +198,7 @@ node| weight parent
 ----| -------------
 ```
 
-In order to commit our `upsert`, we need to use a backtick when refering to the table:
+In order to commit our `upsert`, we need to use a backtick, `` ` ``, when refering to the table:
 
 ```q
 q)`t upsert (`$l 0;"J"$l 1;`)
@@ -208,11 +211,11 @@ pbga| 66
 
 Much better.
 
-Now let's write some code that will set the parent node for a number of child nodes.
+Now let's write some code that will set the `parent` node for a number of child nodes.
 
-If we remove the first 3 items from lines that contain children, we will be left with just the children.
+If we remove the first `3` items from lines that contain children, we will be left with just the children.
 
-We can do this using the drop operator, `_`
+We can do this using the [drop](http://code.kx.com/q/ref/lists/#_-drop) operator, `_`
 
 ```q
 q)l:" " vs except[;"(),"] (read0 `:input/07x.txt) 7 / use the eighth line of example input
@@ -229,7 +232,7 @@ q)3 _ l / drop the first 3 from the list
 "qoyq"
 ```
 
-We can feed `each` of these children into a lambda function that will `upsert` each one into our table `t`. In order to do this we will create the lambda as a projection, with the first argument being the parent node, `l 0`. We can explicitly name the arguments being passed into the lambda for clarity:
+We can feed `each` of these children into a lambda function that will `upsert` each one into our table `t`. In order to do this we will create the lambda as a projection, with the first argument being the `parent` node, `l 0`. We can explicitly name the arguments being passed into the lambda for clarity:
 
 ```q
 q){[parent;node] }[l 0;] each 3 _ l / note the return value is null, ::
@@ -238,7 +241,7 @@ q){[parent;node] }[l 0;] each 3 _ l / note the return value is null, ::
 ::
 ```
 
-We only have two values for our table, we have the `node` and the `parent`... we do not have the weight.
+We only have two values for our table, we have the `node` and the `parent`... we do not have the `weight`.
 
 We can use a `null` again, in this case we can use the `null` long, `0N`
 
@@ -254,7 +257,7 @@ q){[parent;node] `t upsert (node;0N;parent)}[`$l 0;] each `$3 _ l
 `t`t`t
 ```
 
-Note that as we are using `upsert` we will overwrite the existing values in the table for the given primary key, `node`. If we use `insert` instead get a key error:
+Note that as we are using `upsert` we will overwrite the existing values in the table for the given primary key, `node`. If we use [insert](http://code.kx.com/q/ref/qsql/#insert) instead get a key error:
 
 ```q
 q){[parent;node] `t insert (`$node;0N;`$parent) }[l 0;] each 3 _ l
@@ -289,7 +292,6 @@ padx (45) -> pbga, havc, qoyq
 We will have overwritten `pbga`'s weight as `0N`
 
 ```q
-
 node| weight parent
 ----| -------------
 pbga|        padx
@@ -302,7 +304,7 @@ Similarly, if we were to process the `padx (45) -> pbga, havc, qoyq` line *befor
 
 In order to get around this we need to use the value for `parent` if it already exists, and the value for `weight` if it already exists.
 
-There are a few ways to pull out the `parent` for a given node:
+There are a few ways to pull out the `parent` for a given `node`
 
 ```q
 q)select from t where node = `pbga
@@ -319,7 +321,7 @@ q)first exec parent from t where node = `pbga
 `padx
 ```
 
-However, as the table is keyed on `node`, we can use the `node` we are after to index into the table
+However, as the table is *keyed* on `node`, we can use the `node` we are after to index into the table
 
 ```q
 q)t[`pbga] / we can use square brackets
@@ -340,7 +342,7 @@ q)t[`pbga; `parent]
 ... and the `weight` like so
 
 ```q
-q)t[`pbga; `weight] / this is null because we overwrote it in the lambda!
+q)t[`pbga; `weight] / note that this is null because we overwrote it in the lambda!
 0N
 ```
 
@@ -358,7 +360,7 @@ q){[parent;node] `t upsert (node;t[node;`weight];parent)}[`$l 0;] each `$3 _ l
 `t
 ```
 
-Let's clear out our table `t` and `upsert` lines 0 and 7 from the input file:
+Let's clear out our table `t` and `upsert` lines `0` and `7` from the example input file.
 
 ```q
 q)delete from `t / delete everything from table t, saving the result back into t
@@ -366,6 +368,11 @@ q)delete from `t / delete everything from table t, saving the result back into t
 q)t / confirm that it's empty
 node| weight parent
 ----| -------------
+```
+
+Process and `upsert` the first line of example input
+
+```q
 q)l:" " vs except[;"(),"] (read0 `:input/07x.txt) 0 / read in the first line
 q)l / check that it looks as expected
 "pbga"
@@ -376,6 +383,11 @@ q)t
 node| weight parent
 ----| -------------
 pbga| 66
+```
+
+Now process and `upsert` the eighth line of example input
+
+```q
 q)l:" " vs except[;"(),"] (read0 `:input/07x.txt) 7 / read in the eighth line
 q)l
 "padx"
@@ -386,11 +398,16 @@ q)l
 "qoyq"
 q)`t upsert (`$l 0;"J"$l 1;t[`$l 0;`parent])
 `t
-q)t
+q)t / check our handywork
 node| weight parent
 ----| -------------
 pbga| 66
 padx| 45
+```
+
+Now process the children from the eighth line
+
+```q
 q){[parent;node] `t upsert (node;t[node;`weight];parent)}[`$l 0;] each `$3 _ l
 `t`t`t
 q)t
@@ -429,7 +446,7 @@ There is a lot of repetition of the `` `$l 0 ``, so let's call that `n` for node
 
 ```q
 { l:" " vs x except "(),"; / line
-  n:`$l 0; / node
+  n:`$l 0; / n for node
   `t upsert (n;"J"$l 1;t[n;`parent]); / update weight for node
   if[3<count l;
     {[parent;node] `t upsert (node;t[node;`weight];parent)}[n;] each `$3_l / update parent for node
@@ -441,7 +458,7 @@ The size of this function means that we really need to be working with a text ed
 
 Assuming we've saved this function in a file called `07.q`, we can load it up in a couple of different ways.
 
-From the shell, loading the script along with the q executable:
+From the shell, loading the script along with the Q executable:
 
 ```sh
 $ q32 07.q # load up from the shell
@@ -453,7 +470,7 @@ Or, directly within the Q session:
 q)\l 07.q
 ```
 
-However, we need to define the table, `t`, before we try running a function that upserts values into that table. Out `07.q`file should look like this:
+However, we need to define the table, `t`, before we try running a function that `upsert`s values into that table. Our `07.q`file should look like this:
 
 ```q
 t:`node xkey flip `node`weight`parent!"sjs"$\:()
@@ -508,10 +525,290 @@ q)first exec node from t where null parent
 
 ## Solving Part 2
 
-**TODO**
+Phew. That felt like a lot of work to get our first star. Unfortunately there's plenty more work ahead of us in order to unlock the second star.
+
+> Apparently, **one program has the wrong weight**, and until it's fixed, they're stuck here. **The weight of a tower is the sum of the weights of the programs in that tower**. Given that exactly one program is the wrong weight, **what would its weight need to be to balance the entire tower?**
+
+First we need to calculate weights of each 'tower'. That is, the sum of the weights of the child nodes added to the weight of the parent, for each parent node.
+
+Once we have all the weights calculated, we ought to be able to work out which parent children with inequal weight, and then work out what the weight needs to be for the single program with incorrect weight.
+
+Easy eh?
+
+We have collapsed the program tower (tree) heirarchy into a table, but we can still traverse it in a tree-like manner. We need to start with the parent node, and then work our way through each child node, and each child node of that node, and so on until we reach the nodes that have no children.
+
+The most programatic way to do this is through [recursion](https://en.wikipedia.org/wiki/Recursion). That is, we have a function which calls itself to help solve the problem.
+
+If we write out the problem in pseudo-code, it will look something like this (starting from the parent node)
+
+```
+if node has children
+  update total_weight for node as node weight + sum of <call function for each child>
+else
+  return weight of current node
+```
+
+If we translate this into Q we get
+
+```q
+{[x]
+  $[count children:exec node from t where parent=x;
+    t[x;`total_weight]:t[x;`weight]+sum .z.s each children;
+    t[x;`weight]
+    ]
+  }
+```
+
+That's a fair bit to process. Let's break it down.
+
+Like in **Part 1** we are using the `exec` command to extract data from our table. If we switch back to our example input file, `07x.txt` we can try out the `exec` command on the example input
+
+```q
+q)exec node from t where parent = ` / this is the same as 'null parent'
+,`tknk
+q)exec node from t where parent = `tknk / find the children of tknk
+`fwft`padx`ugml
+q)exec node from t where parent = `fwft / find the children of fwft
+`xhth`ktlj`cntj
+q)exec node from t where parent = `xhth / find the children of xhth (there are none!)
+`symbol$()
+```
+
+We are saving this result in a variable named `children`, and we are then `count`ing the length of the result. Let's run through the above examples with `count` thrown in
+
+```q
+q)count exec node from t where parent = `
+1
+q)count exec node from t where parent = `tknk
+3
+q)count exec node from t where parent = `fwft
+3
+q)count exec node from t where parent = `xhth
+0
+```
+
+Zero is treated as if it were false, `0b`, so we will only be executing the true (first) section of our conditional when the node has children, otherwise we will be executing the false (second) second of our conditional.
+
+The function [.z.s](http://code.kx.com/q/ref/dotz/#zs-self) is shorthand for "the current function we are in". We could choose to name our lambda function, for example calling it `traverse`, and we could then use `traverse` as the keyword in place of `.z.s`.
+
+You'll notice that we are trying to update `` t[x;`total_weight] ``, but we do not have a `total_weight` column in our table. We should add one before executing the lambda function.
+
+```q
+q)update total_weight:0 from `t
+`t
+q)t / take a look at our updated table
+node| weight parent total_weight
+----| --------------------------
+pbga| 66     padx   0
+xhth| 57     fwft   0
+ebii| 61     ugml   0
+havc| 66     padx   0
+ktlj| 57     fwft   0
+fwft| 72     tknk   0
+cntj| 57     fwft   0
+qoyq| 66     padx   0
+padx| 45     tknk   0
+tknk| 41            0
+ugml| 68     tknk   0
+jptl| 61     ugml   0
+gyxo| 61     ugml   0
+```
+
+We can then run our recursive function. We want to start at the top of the tree (aka 'bottom of the tower'), which is the `node` that has no `parent`, thus we feed should the empty symbol, the single backtick `` ` ``.
+
+You'll probably want to save the function at the bottom of your `07.q` file and load the file back in... or you can squeeze everything on to a single line
+
+```q
+q){[x] $[count children:exec node from t where parent=x; t[x;`total_weight]:t[x;`weight]+sum .z.s each children;t[x;`weight]]}`
+0N
+```
+
+Now we can take a look at our table, `t`, and see that the `total_weight` column has been populated. We return `0` for the leaf nodes (aka 'programs at the very top of the tower').
+
+```q
+q)t
+node| weight parent total_weight
+----| --------------------------
+pbga| 66     padx   0
+xhth| 57     fwft   0
+ebii| 61     ugml   0
+havc| 66     padx   0
+ktlj| 57     fwft   0
+fwft| 72     tknk   243
+cntj| 57     fwft   0
+qoyq| 66     padx   0
+padx| 45     tknk   243
+tknk| 41            778
+ugml| 68     tknk   251
+jptl| 61     ugml   0
+gyxo| 61     ugml   0
+    |
+```
+
+We can see that the three children of `tknk` have weights of `243` (`fwft`), `243` (`padx`) and `251` (`ugml`), and that these are not all equal. `ugml` needs to have a `total_weight` of `243` for the tower to be balanced.
+
+Looking at the children of `ugml` we see `ebii` has weight `61`, `jptl` has weight `61` and `gyxo` also has weight of `61`, therefore it is `ugml` itself that has the incorrect weight. It needs to weigh `8` units lighter so that it's `total_weight` is `243`, as it's `weight` is `68`, it's *correct* `weight` should be `60`.
+
+Unfortunately we cannot work through the results by hand for our puzzle input - there are over 1000 rows in the table. Therefore we need to break this down programmatically.
+
+Before we begin, let's take a copy of our table as I have a feeling we'll need it later:
+
+```q
+q)t_orig:t / save t as t_orig
+```
+
+Sticking with the example input, let's remove all child nodes that do not have any children of their own, the *leaves* of the tree. These have zero total_weight:
+
+```q
+q)delete from `t where total_weight = 0 / note we are using `t to update t with the result
+`t
+q)t / take a look at what's left
+node| weight parent total_weight
+----| --------------------------
+fwft| 72     tknk   243
+padx| 45     tknk   243
+tknk| 41            778
+ugml| 68     tknk   251
+    |
+```
+
+Whilst we are at it, we can delete the null `node` that made it into our table as a result of the recursive function.
+
+```q
+q)delete from `t where null node
+`t
+q)t
+node| weight parent total_weight
+----| --------------------------
+fwft| 72     tknk   243
+padx| 45     tknk   243
+tknk| 41            778
+ugml| 68     tknk   251
+```
+
+We want to *group* our nodes up by `parent` so that we can see where the total_weight differs. Note that we need to explicitly include the `node`, `weight` and `total_weight` in our query so that all the results are included; by default Q will take the `last` result.
+
+```q
+q)select node, weight, total_weight by parent from t
+parent| node            weight   total_weight
+------| -------------------------------------
+      | ,`tknk          ,41      ,778
+tknk  | `fwft`padx`ugml 72 45 68 243 243 251
+```
+
+We want to identify the `node` where the values in `total_weight` differ, that is to say there is more than `1` *distinct* `total_weight`.
+
+```q
+q)select node, weight, total_weight, weights:count distinct total_weight by parent from t
+parent| node            weight   total_weight weights
+------| ---------------------------------------------
+      | ,`tknk          ,41      ,778         1
+tknk  | `fwft`padx`ugml 72 45 68 243 243 251  2
+```
+
+In order to keep our grouped results, we need to assign the result of this query back to `t`
+
+```q
+q)t:select node, weight, total_weight, weights:count distinct total_weight by parent from t
+```
+
+Now we can identify the parent that has the inequal children by selecting out where `weights` is greater than 1
+
+```q
+q)t:select from t where weights > 1
+q)t
+parent| node           weight   total_weight weights
+------| --------------------------------------------
+tknk  | fwft padx ugml 72 45 68 243 243 251  2
+```
+
+We now want to *remove* any nodes that are further up in the tower that contain the problem node. Note that this is not needed for the example, but will be needed for the real puzzle input, so bear with me. We do this by removing any nodes that are also a `parent` in our table.
+
+```q
+q)t:select from t where not any each node in\:exec parent from t / this syntax is rather painful
+q)t
+parent| node           total_weight weights
+------| -----------------------------------
+tknk  | fwft padx ugml 243 243 251  2
+```
+
+We should have pinned down the problem parent and it's nodes by this point. We can see that `ugml` is causing the tower to be unbalanced. It's `8` too heavy. If we [ungroup](http://code.kx.com/q/ref/dictsandtables/#ungroup) our table it will make the extraction slightly more straightforward:
+
+```q
+q)t:ungroup t
+q)t
+parent node total_weight weights
+--------------------------------
+tknk   fwft 243          2
+tknk   padx 243          2
+tknk   ugml 251          2
+```
+
+There is a single entry with a weight different to the others. We need to identify the `node` with the incorrect weight, and what the weight difference is.
+
+We can use `group` to group together the `total_weight`s, identify where there is only `1` weight (the wrong one), and then extract this weight.
+
+```q
+q)exec group total_weight from t
+243| 0 1
+251| ,2
+```
+
+We can then `count each` to see how many nodes there are with each `total_weight`
+
+```q
+q)exec count each group total_weight from t
+243| 2
+251| 1
+```
+
+We are after the `node` that only occurs once:
+
+```q
+q)exec 1=count each group total_weight from t
+243| 0
+251| 1
+```
+
+`where` works a little differently on dictionaries, it gives us the key:
+```q
+q)exec where 1=count each group total_weight from t
+,251
+```
+
+Take the `first` because `where` always returns us a lists
+
+```q
+q)exec first where 1=count each group total_weight from t
+251
+```
+
+Once we've done that we can feed it into a lambda where we also input the `node` and `total_weight` columns
+
+```q
+q)exec {(first x where y=z;(first y where y<>z)-z)}[node;total_weight;first where 1=count each group total_weight] from t
+`ugml
+-8
+q
+```
+
+Save this as `res`
+
+```q
+q)res:exec {(first x where y=z;(first y where y<>z)-z)}[node;total_weight;first where 1=count each group total_weight] from t
+```
+
+Now we can extract the weight of the `node` from our `t_orig` table, and then add the difference to get the correct weight.
+
+```q
+q)(last res)+exec first weight from t_orig where node=first res
+60
+```
+
+Now we just have to switch the input file for the puzzle input and the second star is ours!
 
 ## Complete Solution To Day 7
 
-My full solution for **Day 07** is below:
+My full solution for **Day 7** is below. Note that I save the table `t` as `s` when we start modifying it.
 
 <pre class="q" id='solution'></pre>

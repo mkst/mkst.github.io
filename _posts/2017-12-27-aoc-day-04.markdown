@@ -2,11 +2,14 @@
 layout: post
 title:  "Advent of Code 2017, Day 04"
 date:   2017-12-27 08:00:00 +0000
+last_updated: 2018-01-06
 categories: aoc tutorial
 onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/04.q', 'solution')
 ---
 
 # Day 4 High-Entropy Passphrases
+
+You should know the format by now... Read through today's [challenge text](http://adventofcode.com/2017/day/4). I've quoted the crux of the challenge below and highlighted the key words.
 
 >A passphrase consists of a series of words (lowercase letters) separated by spaces. To ensure security, a valid passphrase **must contain no duplicate words**.
 
@@ -102,7 +105,7 @@ q)read0 `:input/04.txt
 ..
 ```
 
-Each line of the input contains a list of words separated by a single space, `" "`, we can therefore use `vs` to split these lines into lists of words. Like **Day 02**, we can start by trying with the `first` line of the input file.
+Each line of the input contains a list of words separated by a single space, `" "`, we can therefore use `vs` to split these lines into lists of words. Like **Day 2**, we can start by trying with the `first` line of the input file.
 
 ```q
 q)" " vs first read0 `:input/04.txt
@@ -115,7 +118,7 @@ q)" " vs first read0 `:input/04.txt
 "loo"
 ```
 
-... and similarly per **Day 02**, we need to either wrap this in brackets, or use each-both when running against the whole input file:
+... and similarly per **Day 2**, we need to either wrap this in brackets, or use each-both when running against the whole input file:
 
 ```q
 q)(" " vs) each read0 `:input/04.txt
@@ -201,6 +204,6 @@ q)sum { (count x)=count distinct asc each x } each (" " vs) each read0 `:input/0
 
 ## Complete Solution To Day 4
 
-My full solution for **Day 04** is below:
+My full solution for **Day 4** is below:
 
 <pre class="q" id='solution'></pre>

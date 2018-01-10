@@ -2,11 +2,14 @@
 layout: post
 title:  "Advent of Code 2017, Day 06"
 date:   2018-01-03 08:00:00 +0000
+last_updated: 2018-01-06
 categories: aoc tutorial
 onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/06.q', 'solution')
 ---
 
 # Day 6: Memory Reallocation
+
+There's a fair bit to read in today's [challenge text](http://adventofcode.com/2017/day/6). I've pulled out the key paragraph and emphasised the highlights.
 
 > The reallocation routine operates in cycles. In each cycle, it **finds the memory bank with the most blocks** (ties won by the lowest-numbered memory bank) and redistributes those blocks among the banks. To do this, it **removes all of the blocks from the selected bank, then moves to the next (by index) memory bank and inserts one of the blocks**. It continues doing this until it runs out of blocks; **if it reaches the last memory bank, it wraps around to the first one**.
 
@@ -16,7 +19,7 @@ We then need to reset this 'bank' (index) to zero and share out the 'blocks' in 
 
 ## Solving Part 1
 
-From **Day 01** we know that the `max` operator will give us the maximum number in a list.
+From **Day 1** we know that the `max` operator will give us the maximum number in a list.
 
 Let's try with the example, `0 2 7 0`
 
@@ -25,7 +28,7 @@ q)max 0 2 7 0
 7
 ```
 
-We know the maximum of the list, but not *where* it occurs in the list. Leveraging some code from **Day 01** allows us to build the following snippet which give us the indices of the list where the maximum occurs:
+We know the maximum of the list, but not *where* it occurs in the list. Leveraging some code from **Day 1** allows us to build the following snippet which give us the indices of the list where the maximum occurs:
 
 ```q
 q)7=0 2 7 0 / where the list is equal to 7
@@ -255,7 +258,7 @@ q)read0 `:input/06.txt
 "4\t1\t15\t12\t0\t9\t9\t5\t5\t8\t7\t3\t14\t5\t12\t3"
 ```
 
-A list of numbers separated by tabs. Almost identical to **Day 02**. We need to take the `first` item from the `read0`, split on `"\t"` and then cast to longs:
+A list of numbers separated by tabs. Almost identical to **Day 2**. We need to take the `first` item from the `read0`, split on `"\t"` and then cast to longs:
 
 ```q
 q)"J"$"\t" vs first read0 `:input/06.txt
