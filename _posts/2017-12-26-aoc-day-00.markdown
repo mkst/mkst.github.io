@@ -2,17 +2,21 @@
 layout: post
 title:  "Advent of Code 2017, Day 00"
 date:   2017-12-26 08:00:00 +0000
-last_updated: 2018-01-12
+last_updated: 2018-01-13
 categories: aoc tutorial
 ---
 
 # Day 0 - Firing up our first q/kdb+ session
 
-Getting started with q/kdb+ isn't quite as straightforward as simply downloading the binary file and double-clicking. You can read through the *official* getting started guide on the [KX Wiki](http://code.kx.com/q/tutorials/install/), or you can follow the steps below.
+Getting started with q/kdb+ isn't quite as straightforward as simply downloading the binary file and double-clicking. You can read through the *official* getting started guide on the [Kx Wiki](http://code.kx.com/q/tutorials/install/), or you can follow the steps below.
 
-**Note:** Windows and Mac instructions will follow later...
+ - [Linux Instructions](#linux-instructions)
+ - [Windows Instructions](#windows-instructions)
+ - Mac instructions will follow later...
 
-## Linux
+**Note:** I am assuming that you are using the *free* 32bit version. If you are using the 64bit version, following the instructions provided by Kx which will explain about the `k4.lic` license file.
+
+## Linux Instructions
 
 Firstly download the `Linux-x86` zip from [kx.com/download/](http://kx.com/download/).
 
@@ -52,7 +56,7 @@ Now let's create a script to setup our environment, note that this just contains
 ```sh
 $ mkdir scripts
 $ cat > scripts/env.sh << \EOF
-BASE=$(readlink -f $(cd "$( dirname "${BASH_SOURCE[0]}"  )"/.. && pwd))
+BASE=$(readlink -f $(dirname "${BASH_SOURCE[0]}")/..)
 export QHOME=${BASE}/q
 export PATH=${PATH}:${QHOME}
 EOF
@@ -71,7 +75,7 @@ Now we can `source` our `env.sh` file and then start up a `q32` session
 $ source scripts/env.sh
 $ q32
 KDB+ 3.5 2017.11.30 Copyright (C) 1993-2017 Kx Systems
-l32/ 4()core 7889MB mark surface 127.0.1.1 NONEXPIRE
+l32/ 4()core 15800MB mark carbon 127.0.1.1 NONEXPIRE
 
 Welcome to kdb+ 32bit edition
 For support please see http://groups.google.com/d/forum/personal-kdbplus
@@ -86,4 +90,66 @@ To exit you can either type `\\` (to backslashes) or `exit 0`
 ```q
 q)exit 0
 $
+```
+
+## Windows Instructions
+
+Firstly download the `Windows` zip from [kx.com/download/](http://kx.com/download/).
+
+The following assumes we downloaded the zip to `C:\Users\%USERPROFILE%\Downloads\windows.zip` and want all our code to live in `C:\Users\%USERPROFILE%\kdb`
+
+Right-click the `windows.zip` file and extract to `C:\Users\<Username>\kdb`. It will create a folder called `q` which will contain the Q binary and a few scripts.
+
+Now let's create a script to setup our environment, we want to create a folder inside the `kdb` directory called `scripts`. Once done, fire up your favourite text editor, paste the following snippet in, and save as `env.bat` inside the `scripts` directory.
+
+```posh
+:: disable echoing to console
+@echo off
+:: save current directory
+set cwd=%cd%
+:: change to q directory
+cd /d %~dp0../q
+:: setup Q environment variables
+set QHOME=%cd%
+:: add QHOME to our path
+set PATH=%PATH%;%QHOME%
+:: return to where originated
+cd /d %cwd%
+```
+
+We also want to create a shortcut for our Q binary. Sae the following snipped to a file called `q32.cmd` inside the `q` directory that was created when you unzipped the `windows.zip` file
+
+```batch
+%QHOME%\w32\q
+```
+
+We can then fire up the command prompt (Start -> Run -> `cmd.exe`), load our environment script and run q32.cmd
+
+```posh
+Microsoft Windows [Version 10.0.16299.125]
+(c) 2017 Microsoft Corporation. All rights reserved.
+
+C:\Users\Mark>cd kdb
+
+C:\Users\Mark\kdb>.\scripts\env.bat
+
+C:\Users\Mark\kdb>q32
+
+C:\Users\Mark\kdb>C:\Users\Mark\kdb\q\w32\q
+KDB+ 3.5 2017.11.30 Copyright (C) 1993-2017 Kx Systems
+w32/ 4()core 4095MB Mark carbon 192.168.0.26 NONEXPIRE
+
+Welcome to kdb+ 32bit edition
+For support please see http://groups.google.com/d/forum/personal-kdbplus
+Tutorials can be found at http://code.kx.com/q
+To exit, type \\
+To remove this startup msg, edit q.q
+```
+
+To exit you can either type `\\` (to backslashes) or `exit 0`
+
+```q
+q)exit 0
+
+C:\Users\Mark\kdb>
 ```
