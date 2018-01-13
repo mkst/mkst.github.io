@@ -1,0 +1,438 @@
+---
+layout: post
+title:  "Advent of Code 2017, Day 08"
+date:   2018-01-13 08:00:00 +0000
+last_updated: 2018-01-13
+categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/08.q', 'solution')
+---
+
+# Day 8: I Heard You Like Registers
+
+Day 7 was a bit of a pig. Today is a cakewalk by comparison, although we will use a couple of new operators to keep things interesting. Let's read the [challenge text](http://adventofcode.com/2017/day/8) and crack on.
+
+> Each instruction consists of several parts: **the register to modify**, whether to **increase or decrease that register's value**, the **amount by which to increase or decrease it**, **and a condition**. **If the condition fails, skip the instruction** without modifying the register. The **registers all start at 0**.
+
+If we look at the example input, we can see that it *almost* resembles Q code.
+
+```
+b inc 5 if a > 1
+a inc 1 if b < 5
+c dec -10 if a >= 1
+c inc -20 if c == 10
+```
+
+If we take the first line
+
+```
+b inc 5 if a > 1
+```
+
+Rewritten as Q would be
+
+```q
+if[a > 1;b+:5]
+```
+
+If we take the 3rd line
+
+```
+c inc -20 if c == 10
+```
+
+... and re-write in Q it would be
+
+```q
+if[a >= 1;c-:-10]
+```
+
+We are also told:
+
+>You might also encounter `<=` (less than or equal to) or `!=` (not equal to).
+
+With that in mind, let's parse the example input, re-arrange the lines into Q code and let Q solve today's challenge!
+
+## Solving Part 1
+
+For the previous challenges, we have used a mix of `read0` and `vs` to read in our input and split on tabs or spaces. Q also offers another way of parsing text using the (overloaded) [0:](http://code.kx.com/q/ref/filenumbers/#load-csv) operator. This operator can do a variety of different things based on the arguments being passed to it. For example, it can be used to convert a table into a [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) file, or a CSV file into a table, however we will be using it to split our input file on whitespace, and extract only the columns we care about.
+
+Before we being writing any code, let's save the example input as `input/08x.txt`.
+
+We will be using the `0:` operator in 'load-csv' mode, but instead of a comma, `","`, being our delimiter (field separator), we will use a space, `" "`. In this mode we need to give the `type` of each column that we are trying to parse. We want to keep everything as strings, therefore we need to use an asterisk, `*`, for each column.
+
+Let's fire up a Q session, and read in our example with `read0`.
+
+```q
+KDB+ 3.5 2017.11.30 Copyright (C) 1993-2017 Kx Systems
+l32/ 4()core 15800MB mark carbon 127.0.1.1 NONEXPIRE
+
+q)read0 `:input/08x.txt
+"b inc 5 if a > 1"
+"a inc 1 if b < 5"
+"c dec -10 if a >= 1"
+"c inc -20 if c == 10"
+```
+
+ Now see what happens when we use `0:` on the `first` line of our example input
+
+```q
+q)first read0 `:input/08x.txt
+"b inc 5 if a > 1"
+q)("*******";" ") 0: first read0 `:input/08x.txt / there are 7 columns and we are splitting on " "
+,"b"
+"inc"
+,"5"
+"if"
+,"a"
+,">"
+,"1"
+```
+
+We would get the same result if we were to use `vs` to split on `" "`
+
+```q
+q)" " vs first read0 `:input/08x.txt
+,"b"
+"inc"
+,"5"
+"if"
+,"a"
+,">"
+,"1"
+```
+
+The `0:` operator comes into it's own when we want to parse the types of a line, for example
+
+```q
+q)("**j***j";" ") 0: first read0 `:input/08x.txt
+,"b"
+"inc"
+5 / <--- note this is a long rather than a char list now!
+"if"
+,"a"
+,">"
+1 / <--- so is this!
+```
+
+... however for our purposes we still want to keep everything as strings.
+
+What we *can* do is discard any columns that we are not interested in.
+
+In this case, every line has `"if"`, which we can throw away by putting a space, `" "` as the type for that column:
+
+```q
+q)("*** ***";" ") 0: first read0 `:input/08x.txt / now we only have 6 columns
+,"b"
+"inc"
+,"5"
+,"a"
+,">"
+,"1"
+```
+
+We can also use `0:` without requiring any `each` adverbs (as we would when using `vs` on multiple lines), for example when parsing the whole example file:
+
+```q
+q)("*** ***";" ") 0: read0 `:input/08x.txt
+,"b"  ,"a"  ,"c"  ,"c"
+"inc" "inc" "dec" "inc"
+,"5"  ,"1"  "-10" "-20"
+,"a"  ,"b"  ,"a"  ,"c"
+,">"  ,"<"  ">="  "=="
+,"1"  ,"5"  ,"1"  "10"
+```
+
+Let's save this as variable `i` for input.
+
+```q
+q)i:("*** ***";" ") 0: read0 `:input/08x.txt
+```
+
+In order to execute these statements we need to do a couple of things:
+
+ - create variables for the registers and initialise them to zero
+ - re-arrange the input lines into commands that Q can evaluate
+
+Let's tackle the first problem, the registers.
+
+We can index into the first row of `i` to pull out the registers:
+
+```q
+q)i 0
+,"b"
+,"a"
+,"c"
+,"c
+```
+
+We can use the `distinct` operator, which we used on **Day 4**, to remove duplicates:
+
+```q
+q)distinct i 0
+,"b"
+,"a"
+,"c"
+```
+
+The [set](http://code.kx.com/q/ref/filewords/#set) operator allows us to *set* values to variables, for example:
+
+```q
+q)`foo set 123 / set 'foo' to 123
+`foo
+q)foo / confirm that foo is 123
+123
+q)set[`foo;123] / square bracket notation
+`foo
+q)foo
+123
+```
+
+If we cast our list of `distinct` registers to symbols using `` `$ ``, we can feed `each` into `set`.
+
+```q
+q)`$distinct i 0 / casting registers to symbol
+`b`a`c
+q)set[;0] each `$distinct i 0 / using set as a projection
+`b`a`c
+q)b / sanity check
+0
+q)a
+0
+q)c
+0
+```
+
+However, it's not a great idea to pollute the global namespace with all these variables, for example we saved our input as `i` and had there had been a register named `"i"` we would have overwritten it!
+
+To get around this, we can create a namespace for our registers, and save them all in there.
+
+Let's create a namespace called `.r`. We can do this by prepending each of our `distinct` registers with `".r."` before we cast them to symbols and pass them to `set`.
+
+We will use the each-right adverb, `/:`, as we have one item on the left (the `".r."`) and multiple items on the right (`("b";"a";"c")`) we we want to join together with ","
+
+Here's an example of using each-left to join the word `"Hello"` to a list of names:
+
+```q
+q)"Hello ",/:("Santa";"Rudolf";"Mrs. Claus") / the comma performs the join operation
+"Hello Santa"
+"Hello Rudolf"
+"Hello Mrs. Claus"
+```
+
+Applying this to our registers
+
+```q
+q)".r.",/:distinct i 0
+".r.b"
+".r.a"
+".r.c"
+```
+
+Casting to symbols
+
+```q
+q)`$".r.",/:distinct i 0
+`.r.b`.r.a`.r.c
+```
+
+... and feeding into the `set`
+
+```q
+q)set[;0] each `$".r.",/:distinct i 0
+`.r.b`.r.a`.r.c
+q).r.b
+0
+q).r.a
+0
+q).r.c
+0
+```
+
+If we assign the result of our `set` command to variable `r`, then we have a quick way of checking the contents of our variables
+
+```q
+q)r:set[;0] each `$".r.",/:distinct i 0
+q)value each r / they are all zero
+0 0 0
+```
+
+Now that we have our registers initialised, we need to take our input lines and format them such that they can be parsed by the Q interpreter.
+
+To get the `first` line of our input we need to `flip i` otherwise we will be getting the `first` *row* rather than the `first` *column*:
+
+```q
+q)first i / takes the row, we want the column
+,"b"
+,"a"
+,"c"
+,"c"
+q)flip i / this flips rows and columns
+,"b" "inc" ,"5"  ,"a" ,">" ,"1"
+,"a" "inc" ,"1"  ,"b" ,"<" ,"5"
+,"c" "dec" "-10" ,"a" ">=" ,"1"
+,"c" "inc" "-20" ,"c" "==" "10"
+q)first flip i / this is what we want
+,"b"
+"inc"
+,"5"
+,"a"
+,">"
+,"1"
+```
+
+We want to create the following statement from the first line:
+
+```q
+"if[.r.a>1;.r.b+:5]"
+```
+
+Let's work towards that, first let's put the columns in the correct order by indexing into `x` and joining the results with `,`
+
+```q
+q){ (x 3),(x 4),(x 5),(x 0),(x 1),(x 2) } first flip i
+"a>1binc5
+```
+
+Now prefix the registers with `".r."`
+
+```q
+q){ ".r.",(x 3),(x 4),(x 5),".r.",(x 0),(x 1),(x 2) } first flip i
+".r.a>1.r.binc5
+```
+
+The second item in `x` (`x 1`) will either be `"inc"` or `"dec"`, we need to replace it with `"+:"` or `"-:"` respectively. We can use the conditional statement for this
+
+```q
+q){ ".r.",(x 3),(x 4),(x 5),".r.",(x 0),$["inc"~(x 1);"+:";"-:"],(x 2) } first flip i
+".r.a>1.r.b+:5"
+```
+
+Now let's add the bits that make up the `if` statement, `"if["`, `";"` and `"]"`
+
+```q
+q){ "if[.r.",(x 3),(x 4),(x 5),";.r.",(x 0),$["inc"~(x 1);"+:";"-:"],(x 2),"]" } first flip i
+"if[.r.a>1;.r.b+:5]"
+```
+
+Looking good! The only thing left is to convert the condition `"=="` to `"="`, and `"!="` to `"<>"` using a nested conditional statement
+
+```q
+q){ "if[.r.",(x 3),$["=="~(x 4);"=";"!="~x 4;"<>";x 4],(x 5),";.r.",(x 0),$["inc"~(x 1);"+:";"-:"],(x 2),"]" } first flip i
+"if[.r.a>1;.r.b+:5]"
+```
+
+We can see what this produces by running against `each flip i`
+
+```q
+q){ "if[.r.",(x 3),$["=="~(x 4);"=";"!="~x 4;"<>";x 4],(x 5),";.r.",(x 0),$["inc"~(x 1);"+:";"-:"],(x 2),"]" } each flip i
+"if[.r.a>1;.r.b+:5]"
+"if[.r.b<5;.r.a+:1]"
+"if[.r.a>=1;.r.c-:-10]"
+"if[.r.c=10;.r.c+:-20]"
+```
+
+This line of code is getting pretty long to be executing in the console, we can save this as a helper function, `reorder`, to keep things tidy
+
+```q
+q)reorder:{ "if[.r.",(x 3),$["=="~(x 4);"=";"!="~x 4;"<>";x 4],(x 5),";.r.",(x 0),$["inc"~(x 1);"+:";"-:"],(x 2),"]" }
+q){ reorder x } each flip i / the lambda is not strictly needed, we could do 'reorder each flip i'
+"if[.r.a>1;.r.b+:5]"
+"if[.r.b<5;.r.a+:1]"
+"if[.r.a>=1;.r.c-:-10]"
+"if[.r.c=10;.r.c+:-20]"
+```
+
+Great! We can now use the `value` operator we saw on **Day 1** to get the Q interpreter to evaluate each statement:
+
+```q
+q){ value reorder x } each flip i / we can add a semicolon at the end of the line to suppress return values being printed
+::
+::
+::
+::
+```
+
+Let's check the status of our variables
+
+```q
+q)value each r
+0 1 -10
+```
+
+> What is the **largest value in any register** after completing the instructions in your puzzle input?
+
+It's clear that the largest value is `1`
+
+```q
+q)max value each r
+1
+```
+
+All that's left to do is run this for our [puzzle input](http://adventofcode.com/2017/day/8/input). Putting this all together gives us
+
+```q
+q)reorder:{ "if[.r.",(x 3),$["=="~(x 4);"=";"!="~x 4;"<>";x 4],(x 5),";.r.",(x 0),$["inc"~(x 1);"+:";"-:"],(x 2),"]" }
+q)i:("*** ***";" ") 0: read0 `:input/08.txt
+q)r:set[;0] each `$".r.",/:distinct i 0
+q){ value reorder x } each flip i;
+q)max value each r
+4902
+```
+
+## Solving Part 2
+
+> To be safe, the CPU also needs to know the **highest value held in any register during this process** so that it can decide how much memory to allocate to these operations.
+
+Today is our lucky day. It is much easier to get today's second star than **Day 7**.
+
+If we move our `max value each r` line *into* the lambda function it will return us the "*highest value held in any register*" on each call.
+
+To be certain, let's load the example input back in and test it out
+
+```q
+q)i:("*** ***";" ") 0: read0 `:input/08x.txt
+```
+
+Re-initialise the registers
+
+```q
+q)r:set[;0] each `$".r.",/:distinct i 0
+```
+
+Now move the `value each r` into the lambda, separating it from the first statement with a semicolon, `;`, and re-run
+
+```q
+q){ value reorder x; max value each r } each flip i
+0 1 10 1
+```
+
+We can see that the maximum value here is 10, let's run with the puzzle input and save the result of the lambda to `res` so we can easily check the `max` of it
+
+```q
+q)i:("*** ***";" ") 0: read0 `:input/08.txt
+```
+
+Re-initialise the registers...
+
+```q
+q)r:set[;0] each `$".r.",/:distinct i 0
+```
+
+Now run the lambda against the puzzle input
+
+```q
+q)res:{ value reorder x; max value each r } each flip i
+```
+
+Now let's see what the `max` value is and get our second star!
+
+```q
+q)max res
+7037
+```
+
+## Complete Solution To Day 8
+
+My full solution for **Day 8** is below. I switch out the `inc` and `dec` outside of the function, and by storing the output of the `value each r` to `res` we can take `last res` for **Part 1** and `max res` for **Part 2**.
+
+<pre class="q" id='solution'></pre>

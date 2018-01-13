@@ -2,7 +2,7 @@
 layout: post
 title:  "Advent of Code 2017, Day 00"
 date:   2017-12-26 08:00:00 +0000
-last_updated: 2018-01-01
+last_updated: 2018-01-12
 categories: aoc tutorial
 ---
 
@@ -43,7 +43,7 @@ $ sudo pacman -S rlwrap # arch
 Unless you're running a 32bit version of Linux, you'll likely need to install the `libc` 32bit libraries:
 
 ```sh
-$ sudo apt-get install libc-i386 # debian
+$ sudo apt-get install libc6-i386 # debian
 $ sudo yum install glibc.i686 # redhat
 ```
 
