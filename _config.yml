@@ -23,7 +23,7 @@ twitter_username: themarkstreet
 github_username:  streetster
 
 disqus:
-    shortname: streetster-github-io.disqus.com
+    shortname: streetster-github-io
 
 # Build settings
 markdown: kramdown
