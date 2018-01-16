@@ -1,0 +1,300 @@
+---
+layout: post
+title:  "Advent of Code 2017, Day 09"
+date:   2018-01-16 08:00:00 +0000
+last_updated: 2018-01-16
+categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/09.q', 'solution')
+---
+
+# Day 9: Stream Processing
+
+>**Garbage begins with < and ends with >**. Between those angle brackets, almost any character can appear, including { and }... Your goal is to **find the total score for all groups in your input**. Each group is assigned a score which is one more than the score of the group that immediately contains it... some program has canceled some of the characters within it using !: inside garbage, **any character that comes after ! should be ignored**, including <, >, and even another !.
+
+We need to read through our input file, remove any 'canceled' characters, remove all the garbage, and then count up the groups.
+
+Let's fire up a Q session and get started.
+
+## Solving Part 1
+
+The first thing we want to do is remove the cancelled characters from our input stream. For that we can use the string-search-replace operator, [ssr](http://code.kx.com/q/ref/strings/#ssr). This takes three arguments, the first is the string we are working on, the second is the string to search for, and the last is the replacement string. Here is an example to make things clearer
+
+```q
+q)ssr["Monday";"Mon";"Fri"] / change Mon to Fri
+"Friday"
+q)ssr["Mississippi";"s";"abc"] / change any "s"s to "abc"s
+"Miabcabciabcabcippi"
+```
+
+We want to switch out any two character sections of the input string that start with `"!"` and contain *any* next character.
+
+Thankfully `ssr` supports a [regex](https://en.wikipedia.org/wiki/Regular_expression)-like operator `?`, and we can therefore search for `"!?"` to find `"!"` followed by *any* single character. We want to *remove* them, so we can pass in the third argument as the empty string ``""``. We can try this against a couple of the examples of garbage
+
+```q
+/ excuse the errors in syntax highlighting
+q)ssr["<{!>}>";"!?";""]
+"<{}>"
+q)ssr["<{o\"i!a,<{i<a>";"!?";""] / note we have to escape the " in the string with a backslash
+"<{o\"i,<{i<a>"
+```
+
+Let's turn this into a lambda, so we can feed in any string
+
+```q
+q){ ssr[x;"!?";""] }
+{ ssr[x;"!?";""] }
+```
+
+Now that we can clean the escaped characters we need to start removing the garbage. Rather than trying to use `ssr` for this, we will churn through the input string, character by character. If we encounter a `<` we will treat this as the start of a garbage block (unless we are already *in* a garbage block), and if we encounter a `>` we will treat this as the end of the garbage block. If we are entering, leaving, or currently in a garbage block we will return the empty string ``""``, otherwise we will return the input character.
+
+Let's write this as pseudo-code
+
+```
+if garbage flag is set to true
+  if the input character is ">"
+    set garbage flag to false
+  return empty string ""
+else
+  if the input character is "<"
+    set the garbage flag to true
+    return empty string ""
+  else
+    return the input character
+```
+
+If we rewrite this in Q, line-for-line we will get
+
+```q
+{[x]
+  if[garbage; / if garbage flag is set to true
+    if[x=">"; / if the input character is ">"
+      garbage::0b]; / set garbage flag to false
+    :""]; /return empty string ""
+ / note: we don't need the else as we would already have returned if garbage flag was set
+  if[x="<"; / if the input character is "<"
+    garbage::1b; / set the garbage flag to true
+    :""]; / return the empty string
+ / note: we dont need the else here either as we would already have returned if input char was "<"
+  x / return the input character
+  }
+```
+
+There are a couple of new things in this function that we have not encountered before.
+
+ - `:` the single colon allows us to return from a function at any point, e.g. ``:""`` to return the empty string
+ - `::` the double colon allows us to modify global variables when we are inside a function, e.g. `garbage::1b` to set the global variable `garbage` to true.
+
+I'm going to assume you're working with a text editor. I'd suggest [Atom](https://atom.io/) as there is a nice syntax highlighter, [language-kdb-q](https://github.com/quintanar401/language-kdb-q) which you can install from within `Atom` itself.
+
+Let's save this function as `rg` for 'remove garbage', and define the global variable `garbage`, initialised as false. I've added some comments to remind us what is going on.
+
+```q
+garbage:0b / note, do not use :: here as that will create a 'view' to 0b
+
+rg:{[x]
+  if[garbage; / already in garbage section
+    if[x=">"; / end of garbage marker
+      garbage::0b
+      ];
+    :"" / return empty string as this is garbage
+    ];
+  if[x="<"; / start of garbage section
+    garbage::1b;
+    :"" / return empty string
+    ];
+  x / return the input unchanged
+  }
+```
+
+Note that when parsing Q script files, the Q parser expects there to be at least *one leading space* on each line inside a function (including the `}` to close the function). If you fail to add the space you will get an error. If you're using `Atom` with syntax highlighting enabled this will be highlighted as an error for you.
+
+In order to test our `rg` function on an input string, we need to run the `ssr` on it first, therefore let's put together a lambda with these two functions
+
+```q
+{ rg each ssr[x;"!?";""] }
+```
+
+We can test this out on one of the examples of 'self-contained garbage':
+
+```q
+q){ rg each ssr[x;"!?";""] } "<{!>}>" / "because the first > is canceled."
+""
+""
+""
+""
+```
+
+As `rg` returns individual characters back, we need to flatten the results back into a single string. For that, we can use [raze](http://code.kx.com/q/ref/lists/#raze) which does *one* flatten. If we had multiple nested lists, we would need to call `raze` multiple times.
+
+```q
+q){ raze rg each ssr[x;"!?";""] } "<{!>}>" / this is a self-contained piece of garbage
+""
+```
+
+Let's try on more complicated example
+
+```q {% raw %}
+q){ raze rg each ssr[x;"!?";""] } "{{<a>},{<a>},{<a>},{<a>}}" / "5 groups"
+"{{},{},{},{}}"
+q){ raze rg each ssr[x;"!?";""] } "{{<!>},{<!>},{<!>},{<a>}}" / "2 groups"
+"{{}}{% endraw %}
+```
+
+Nice. All the garbage has been disposed of, now we need to count the groups.
+
+> Each group is assigned a score which is one more than the score of the group that immediately contains it. (**The outermost group gets a score of 1.**)
+
+So, we need to iterate along the cleaned list, if we encounter a `{` we need to increase the group 'score', and if we encounter a `}` we can decrease the group 'score', if we see anything else, we should not change the score. As we are told that *[we will] only find well-formed groups* we can return the group 'score' each time we leave a group, that way we should be able to `sum` up the result and get our first star.
+
+As before, let's write out our group-counting function in pseudo-code
+
+```
+if input char is "{"
+  increase group score
+if input char is "}"
+  decrease group score
+  return group score
+return zero
+```
+
+In order to perform the `sum` we need to have a simple list (i.e. one that contains a single type, in this case numbers), hence why we should return zero from our function by default.
+
+Translating this to Q code will give us a function that bears a resemblance to `rg`
+
+```q
+{[x]
+  if[x="{"; / if input char is "{"
+    group_score+:1]; / increase group score
+  if[x="}"; / if input char is "}"
+    group_score-:1; / decrease group score
+    :group_score]; / return group score
+  :0 / return zero
+  }
+```
+
+As before, let's assign this to a function named `cg` for 'count groups'. We should also initialise our `group_score` variable to `1` as we are told that *"The outermost group gets a score of 1."*.
+
+```q
+group_score:1 / outermost group gets a score of 1
+
+cg:{[x]
+  if[x="{"; / start of a new group
+    group_score+:1 / increase group score
+    ];
+  if[x="}"; / end of a group
+    group_score-:1; / decrease group score
+    :group_score / return group score
+    ];
+  :0 / no score
+  }
+```
+
+We can then add `cg` to our chain to be called on `each` character that has been cleaned
+
+```q
+{ cg each raze rg each ssr[x;"!?";""] }
+```
+
+
+Now feed in the first examples to ensure we have understood the problem
+
+```q
+q){ cg each raze rg each ssr[x;"!?";""] } "{}" / one group
+0 1
+```
+
+Looks good, let's add the `sum` and continue with the rest of the examples:
+
+```q {% raw %}
+q)sum { cg each raze rg each ssr[x;"!?";""] } "{{{}}}"
+6
+q)sum { cg each raze rg each ssr[x;"!?";""] } "{{{},{},{{}}}}"
+16
+q)sum { cg each raze rg each ssr[x;"!?";""] } "{<a>,<a>,<a>,<a>}"
+1
+q)sum { cg each raze rg each ssr[x;"!?";""] } "{{<ab>},{<ab>},{<ab>},{<ab>}}"
+9
+q)sum { cg each raze rg each ssr[x;"!?";""] } "{{<!!>},{<!!>},{<!!>},{<!!>}}"
+9
+q)sum { cg each raze rg each ssr[x;"!?";""] } "{{<a!>},{<a!>},{<a!>},{<ab>}}"
+3 {% endraw %}
+```
+
+Now to feed in today's [puzzle input](http://adventofcode.com/2017/day/9/input). No fancy processing is required, simply take the `first` result of `read0`, and the first star is ours!
+
+```q
+q)sum { cg each raze rg each ssr[x;"!?";""] } first read0 `:input/09.txt
+12505
+```
+
+## Solving Part 2
+
+> [Y]ou need to **count all of the characters within the garbage**. The leading and trailing < and > don't count, nor do any canceled characters or the ! doing the canceling.
+
+It seems that [topaz](https://www.reddit.com/user/topaz2078) is being kind to us again today. In order to get our second star we need to count the garbage. As we are already iterating through our garbage as part of the `rg` function, we should be able to simply add a counter in this function and then read the value at the end... and that is exactly what we will do.
+
+Let's review our `rg` function:
+
+```q
+q)rg
+{[x]
+  if[garbage; / already in garbage section
+    if[x=">"; / end of garbage marker
+      garbage::0b
+      ];
+    :"" / return empty string as this is garbage
+    ];
+  if[x="<"; / start of garbage section
+    garbage::1b;
+    :"" / return empty string
+    ];
+  x / return the input unchanged
+  }
+```
+
+In our `if[garbage;...]` section we should increment a variable, let's call it `garbage_count`, as long as the input character is *not* `">"`.
+
+We can change our `if[x=">";...]` section from an `if` to a conditional (`$`), with the else-clause being an increment of `garbage_count`
+
+```q
+$[x=">"; / end of garbage marker
+  garbage::0b;
+  garbage_count+:1 / else increment our garbage count
+  ];
+```
+
+Let's update our function, and also initialise `garbage_count` to zero.
+
+```q
+garbage_count:0
+
+rg:{[x]
+  if[garbage; / already in garbage section
+    $[x=">"; / end of garbage marker
+      garbage::0b;
+      garbage_count+:1 / increment garbage count
+      ];
+    :"" / return empty string as this is garbage
+    ];
+  if[x="<"; / start of garbage section
+    garbage::1b;
+    :"" / return empty string
+    ];
+  x / return the input unchanged
+  }
+```
+
+Loading up our script again, we need to perform the same operation from **Part 1** to iterate over our input file, and then check the value in `garbage_count` to get today's second star:
+
+```q
+q)sum { cg each raze rg each ssr[x;"!?";""] } first read0 `:input/09.txt / part 1
+12505
+q)garbage_count / part 2
+6671
+```
+
+## Complete Solution To Day 9
+
+My full solution for **Day 9** is below. There are a couple of shortcuts I've taken, for example returning the group score variable, `s`, inline after decrementing rather than on a separate line, and also using the `ssr` as a projection rather than wrapping everything in a lambda.
+
+<pre class="q" id='solution'></pre>
