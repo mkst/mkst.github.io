@@ -9,6 +9,8 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/09.q
 
 # Day 9: Stream Processing
 
+Today's challenge looks like a dream for anyone who loves [regex](https://en.wikipedia.org/wiki/Regular_expression). *Unfortunately* Q doesn't support regex out of the box (and I'm not planning on writing any [C code](http://code.kx.com/wiki/Cookbook/regex) today), so we'll have to solve things a different way. Let's begin by reading today's [challenge text](http://adventofcode.com/2017/day/9).
+
 >**Garbage begins with < and ends with >**. Between those angle brackets, almost any character can appear, including { and }... Your goal is to **find the total score for all groups in your input**. Each group is assigned a score which is one more than the score of the group that immediately contains it... some program has canceled some of the characters within it using !: inside garbage, **any character that comes after ! should be ignored**, including <, >, and even another !.
 
 We need to read through our input file, remove any 'canceled' characters, remove all the garbage, and then count up the groups.
@@ -28,7 +30,7 @@ q)ssr["Mississippi";"s";"abc"] / change any "s"s to "abc"s
 
 We want to switch out any two character sections of the input string that start with `"!"` and contain *any* next character.
 
-Thankfully `ssr` supports a [regex](https://en.wikipedia.org/wiki/Regular_expression)-like operator `?`, and we can therefore search for `"!?"` to find `"!"` followed by *any* single character. We want to *remove* them, so we can pass in the third argument as the empty string ``""``. We can try this against a couple of the examples of garbage
+Thankfully `ssr` supports a regex-like operator `?`, and we can therefore search for `"!?"` to find `"!"` followed by *any* single character. We want to *remove* them, so we can pass in the third argument as the empty string ``""``. We can try this against a couple of the examples of garbage
 
 ```q
 / excuse the errors in syntax highlighting

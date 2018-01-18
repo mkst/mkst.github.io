@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/07.q
 
 # Day 7: Recursive Circus
 
-Day 7 already? You know the drill. Take a read through the [challenge text](http://adventofcode.com/2017/day/7). I've quoted the key paragraph below (emphasis added). Be aware that this post uses lots of functionality we've not seen in the previous days' solutions.
+**Day 7** already? You know the drill. Take a read through the [challenge text](http://adventofcode.com/2017/day/7). I've quoted the key paragraph below (emphasis added). Be aware that this post uses lots of functionality we've not seen in the previous days' solutions.
 
 > You ask each program to yell out their **name, their weight, and (if they're holding a disc) the names of the programs immediately above them** balancing on that disc. You write this information down (your puzzle input).
 

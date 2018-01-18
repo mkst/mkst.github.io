@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/08.q
 
 # Day 8: I Heard You Like Registers
 
-Day 7 was a bit of a pig. Today is a cakewalk by comparison, although we will use a couple of new operators to keep things interesting. Let's read the [challenge text](http://adventofcode.com/2017/day/8) and crack on.
+**Day 7** was a bit of a pig. Today is a cakewalk by comparison, although we will use a couple of new operators to keep things interesting. Let's read the [challenge text](http://adventofcode.com/2017/day/8) and crack on.
 
 > Each instruction consists of several parts: **the register to modify**, whether to **increase or decrease that register's value**, the **amount by which to increase or decrease it**, **and a condition**. **If the condition fails, skip the instruction** without modifying the register. The **registers all start at 0**.
 
