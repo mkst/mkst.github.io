@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/08.q
 
 # Day 8: I Heard You Like Registers
 
-**Day 7** was a bit of a pig. Today is a cakewalk by comparison, although we will use a couple of new operators to keep things interesting. Let's read the [challenge text](http://adventofcode.com/2017/day/8) and crack on.
+[Day 7]({{ site.baseurl }}{% post_url 2018-01-04-aoc-day-07 %}){: .internal-link } was a bit of a pig. Today is a cakewalk by comparison, although we will use a couple of new operators to keep things interesting. Let's read the [challenge text](http://adventofcode.com/2017/day/8) and crack on.
 
 > Each instruction consists of several parts: **the register to modify**, whether to **increase or decrease that register's value**, the **amount by which to increase or decrease it**, **and a condition**. **If the condition fails, skip the instruction** without modifying the register. The **registers all start at 0**.
 
@@ -165,7 +165,7 @@ q)i 0
 ,"c
 ```
 
-We can use the `distinct` operator, which we used on **Day 4**, to remove duplicates:
+We can use the `distinct` operator, which we used on [Day 4]({{ site.baseurl }}{% post_url 2017-12-27-aoc-day-04 %}){: .internal-link }, to remove duplicates:
 
 ```q
 q)distinct i 0
@@ -342,7 +342,7 @@ q){ reorder x } each flip i / the lambda is not strictly needed, we could do 're
 "if[.r.c=10;.r.c+:-20]"
 ```
 
-Great! We can now use the `value` operator we saw on **Day 1** to get the Q interpreter to evaluate each statement:
+Great! We can now use the `value` operator we saw on [Day 1]({{ site.baseurl }}{% post_url 2017-12-26-aoc-day-01 %}){: .internal-link } to get the Q interpreter to evaluate each statement:
 
 ```q
 q){ value reorder x } each flip i / we can add a semicolon at the end of the line to suppress return values being printed
@@ -383,7 +383,7 @@ q)max value each r
 
 > To be safe, the CPU also needs to know the **highest value held in any register during this process** so that it can decide how much memory to allocate to these operations.
 
-Today is our lucky day. It is much easier to get today's second star than **Day 7**.
+Today is our lucky day. It is much easier to get today's second star than [Day 7]({{ site.baseurl }}{% post_url 2018-01-04-aoc-day-07 %}){: .internal-link }.
 
 If we move our `max value each r` line *into* the lambda function it will return us the "*highest value held in any register*" on each call.
 

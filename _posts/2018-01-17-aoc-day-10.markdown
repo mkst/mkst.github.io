@@ -20,7 +20,7 @@ If you were hoping for some slightly more hardcore challenges from the AoC, then
 
 >**The list is circular;** if the current position and the length try to reverse elements beyond the end of the list, the operation reverses using as many extra elements as it needs from the front of the list. If the current position moves past the end of the list, it wraps around to the front. **Lengths larger than the size of the list are invalid**.
 
-This doesn't actually sound too bad. We can leverage some tricks we learnt on **Day 6** to handle a circular list. Before we try to tackle the list of `256` numbers, we can work through the example for today. Let's fire up a Q session and get started.
+This doesn't actually sound too bad. We can leverage some tricks we learnt on [Day 6]({{ site.baseurl }}{% post_url 2018-01-03-aoc-day-06 %}){: .internal-link } to handle a circular list. Before we try to tackle the list of `256` numbers, we can work through the example for today. Let's fire up a Q session and get started.
 
 We need a few variables to keep track of the *position* and *skip size*, we can call these `p` and `s` respectively and initialise them both to zero
 
@@ -40,7 +40,7 @@ Variable initialisation done, next stop: the tricky bit.
 
 We need to index into our list `l` at position `p`, and extract the next `3` (first item in our input list `i`) items (wrapping around if need be), reverse them and put them back in place.
 
-From **Day 6** we saw we could use `til` and `mod` in order to generate a range of indexes (indices) that wrapped around a circular list:
+From [Day 6]({{ site.baseurl }}{% post_url 2018-01-03-aoc-day-06 %}){: .internal-link } we saw we could use `til` and `mod` in order to generate a range of indexes (indices) that wrapped around a circular list:
 
 ```q
 (offset + til range) mod (count list)
@@ -60,7 +60,7 @@ q)l (p + til 3) mod count l
 0 1 2
 ```
 
-We need to reverse these values, and then put them back into our list `l`. For that we can use the [amend](http://code.kx.com/q/ref/lists/#amend) operator that we also used on **Day 6**.
+We need to reverse these values, and then put them back into our list `l`. For that we can use the [amend](http://code.kx.com/q/ref/lists/#amend) operator that we also used on [Day 6]({{ site.baseurl }}{% post_url 2018-01-03-aoc-day-06 %}){: .internal-link }.
 
 For today's challenge we will be using it with `4` parameters:
 
@@ -268,7 +268,7 @@ q)read0 `:input/10.txt
 "97,167,54,178,2,11,209,174,119,248,254,0,255,1,64,190"
 ```
 
-Ah, a list of numbers separated by commas. We've not had this one yet, but it's almost the same as **Day 6**, just separated by `","` instead of `"\t"`.
+Ah, a list of numbers separated by commas. We've not had this one yet, but it's almost the same as [Day 6]({{ site.baseurl }}{% post_url 2018-01-03-aoc-day-06 %}){: .internal-link }, just separated by `","` instead of `"\t"`.
 
 ```q
 q)first read0 `:input/10.txt / take the first line
@@ -325,7 +325,7 @@ Thankfully we can re-use our `knot` function as-is, we just need to add bit more
 
 Let's crack on...
 
-We know from **Day 1** that using the small-j casting on a string will return us the ASCII values:
+We know from [Day 1]({{ site.baseurl }}{% post_url 2017-12-26-aoc-day-01 %}){: .internal-link } that using the small-j casting on a string will return us the ASCII values:
 
 ```q
 q)"j"$first read0 `:input/10.txt

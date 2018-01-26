@@ -105,7 +105,7 @@ q)read0 `:input/04.txt
 ..
 ```
 
-Each line of the input contains a list of words separated by a single space, `" "`, we can therefore use `vs` to split these lines into lists of words. Like **Day 2**, we can start by trying with the `first` line of the input file.
+Each line of the input contains a list of words separated by a single space, `" "`, we can therefore use `vs` to split these lines into lists of words. Like [Day 2]({{ site.baseurl }}{% post_url 2017-12-27-aoc-day-02 %}){: .internal-link }, we can start by trying with the `first` line of the input file.
 
 ```q
 q)" " vs first read0 `:input/04.txt
@@ -118,7 +118,7 @@ q)" " vs first read0 `:input/04.txt
 "loo"
 ```
 
-... and similarly per **Day 2**, we need to either wrap this in brackets, or use each-both when running against the whole input file:
+... and similarly per [Day 2]({{ site.baseurl }}{% post_url 2017-12-27-aoc-day-02 %}){: .internal-link }, we need to either wrap this in brackets, or use each-both when running against the whole input file:
 
 ```q
 q)(" " vs) each read0 `:input/04.txt

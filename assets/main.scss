@@ -7,3 +7,15 @@
 @media screen and (max-width: 1000px) {
   .wrapper { max-width: -webkit-calc(1000px - (30px)); max-width: calc(1000px - (30px)); }
   }
+
+.center-image {
+  margin: 0 auto;
+  display: block;
+  }
+
+a.internal-link {
+  color: #2a7ae2;
+  background-color: #F2F3F4;
+  padding:4px;
+  /*font-weight: bold;*/
+}

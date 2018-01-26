@@ -19,7 +19,7 @@ We then need to reset this 'bank' (index) to zero and share out the 'blocks' in 
 
 ## Solving Part 1
 
-From **Day 1** we know that the `max` operator will give us the maximum number in a list.
+From [Day 1]({{ site.baseurl }}{% post_url 2017-12-26-aoc-day-01 %}){: .internal-link } we know that the `max` operator will give us the maximum number in a list.
 
 Let's try with the example, `0 2 7 0`
 
@@ -28,7 +28,7 @@ q)max 0 2 7 0
 7
 ```
 
-We know the maximum of the list, but not *where* it occurs in the list. Leveraging some code from **Day 1** allows us to build the following snippet which give us the indices of the list where the maximum occurs:
+We know the maximum of the list, but not *where* it occurs in the list. Leveraging some code from [Day 1]({{ site.baseurl }}{% post_url 2017-12-26-aoc-day-01 %}){: .internal-link } allows us to build the following snippet which give us the indices of the list where the maximum occurs:
 
 ```q
 q)7=0 2 7 0 / where the list is equal to 7
@@ -251,14 +251,14 @@ q)s
 
 And if we `count s` we will see it contains 5 states, which is the answer to the example input.
 
-Now let's move on to our [puzzle input](http://adventofcode.com/2017/day/6/input) for **Day 6**.
+Now let's move on to our [puzzle input](http://adventofcode.com/2017/day/6/input) for today.
 
 ```q
 q)read0 `:input/06.txt
 "4\t1\t15\t12\t0\t9\t9\t5\t5\t8\t7\t3\t14\t5\t12\t3"
 ```
 
-A list of numbers separated by tabs. Almost identical to **Day 2**. We need to take the `first` item from the `read0`, split on `"\t"` and then cast to longs:
+A list of numbers separated by tabs. Almost identical to [Day 2]({{ site.baseurl }}{% post_url 2017-12-27-aoc-day-02 %}){: .internal-link }. We need to take the `first` item from the `read0`, split on `"\t"` and then cast to longs:
 
 ```q
 q)"J"$"\t" vs first read0 `:input/06.txt
