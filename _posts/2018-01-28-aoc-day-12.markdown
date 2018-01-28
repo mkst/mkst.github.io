@@ -1,0 +1,511 @@
+---
+layout: post
+title:  "Advent of Code 2017, Day 12"
+date:   2018-01-28 08:00:00 +0000
+last_updated: 2018-01-28
+categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/12.q', 'solution')
+---
+
+# Day 12: Digital Plumber
+
+Take a read through today's [puzzle text](http://adventofcode.com/2017/day/12). I've quoted and highlighted the key part below:
+
+> You walk through the village and record the ID of each program and the IDs with which it can communicate directly (your puzzle input). **Each program has one or more programs with which it can communicate, and these pipes are bidirectional**; if 8 says it can communicate with 11, then 11 will say it can communicate with 8. You need to figure out **how many programs are in the group that contains program ID 0**.
+
+The input has the following format:
+
+```
+0 <-> 2
+1 <-> 1
+2 <-> 0, 3, 4
+3 <-> 2, 4
+4 <-> 2, 3, 6
+5 <-> 6
+6 <-> 4, 5
+```
+
+We need to trace our way through the *IDs*, starting with `0` until we've checked all the connections.
+
+ - `0` is connected to `2`
+ - `2` is connected to `0`, `3` and `4`,
+ - `3` is connected `2` and `4`
+ - `4` is connected to `2`, `3` and `6`
+ - `6` is connected to `4` and `5`
+ - `5` is connected to `6`
+
+A [dictionary](http://code.kx.com/q/ref/datatypes/#dictionary-and-table) mapping each ID to it's connected programs sounds like a good way to begin, so let's fire up a Q session and get to work.
+
+## Solving Part 1
+
+The most complicated part of **Part 1** is turning the [puzzle input](http://adventofcode.com/2017/day/12/input) into a dictionary.
+
+Firstly we need to split each line on `" <-> "` so that we get a 2-item list. The first item being the ID of the current program, and the second being a comma-separated list of programs that this ID can communicate with.
+
+If we save the example input as `input/12x.txt` we can work on parsing this before moving on to solve for our real input.
+
+```q
+q)read0 `:input/12x.txt / sanity check that we've saved the example correctly
+"0 <-> 2"
+"1 <-> 1"
+"2 <-> 0, 3, 4"
+"3 <-> 2, 4"
+"4 <-> 2, 3, 6"
+"5 <-> 6"
+"6 <-> 4, 5"
+```
+
+We can leverage `vs` to split lines on a specific character or list of characters. For today's input we want to split on `" <-> "`. So let's do that on the first line of the example file, line `0`
+
+```q
+q)" <-> " vs (read0 `:input/12x.txt) 0
+,"0"
+,"2"
+```
+
+The third line, line `2`, has a program that can communicate with multiple programs:
+
+```q
+q)" <-> " vs (read0 `:input/12x.txt) 2
+,"2"
+"0, 3, 4"
+```
+
+We will have to split these up as a separate step later... but for now, let's break our input file into two lists - the program IDs, and the program (or programs) they can communicate with.
+
+Recall from [Day 2]({{ site.baseurl }}{% post_url 2017-12-27-aoc-day-02 %}){: .internal-link } that we cannot simply throw an `each` into the mix in order to parse the whole file:
+
+```q
+q)" <-> " vs each read0 `:input/12x.txt
+'
+  [0]  " <-> " vs each read0 `:input/12x.txt
+```
+
+We saw that we could either wrap the left arguments to the each in brackets:
+
+```q
+("\t" vs) each read0 `:input/02.txt
+```
+
+or we could use the [each-both](http://code.kx.com/q/ref/adverbs/#each-both) adverb `'`.
+
+```q
+"\t" vs ' read0 `:input/02.txt
+```
+
+The *each-both* works here because the left argument is an single item (an *atom*), so it takes this as the left argument every time for the *each* against each-right item (the lines in the file).
+
+We cannot use each-both here (we will get a `'length'` error), because our left argument is a list of characters, `" <-> "`, and so each-both will take one item from this list for each item on the right. This is not what we want to achieve, so instead of each-both, we can use [each-right](http://code.kx.com/q/ref/adverbs/#each-right), `/:`. This will use the entire left argument for *each item on the right*.
+
+```q
+q)" <-> " vs/: read0 `:input/12x.txt
+,"0" ,"2"     
+,"1" ,"1"     
+,"2" "0, 3, 4"
+,"3" "2, 4"   
+,"4" "2, 3, 6"
+,"5" ,"6"     
+,"6" "4, 5"
+```
+
+.. or we could have wrapped the left argument in brackets:
+
+```q
+q)(" <-> " vs) each read0 `:input/12x.txt
+,"0" ,"2"     
+,"1" ,"1"     
+,"2" "0, 3, 4"
+,"3" "2, 4"   
+,"4" "2, 3, 6"
+,"5" ,"6"     
+,"6" "4, 5"
+```
+
+The each-right is *slightly* faster, and is the more Q-idiomatic way of doing things, but you can pick whichever is more clear to you.
+
+Let's save this as `i` so we can do some manipulation with it.
+
+```q
+q)i:" <-> " vs/: read0 `:input/12x.txt
+q)i
+,"0" ,"2"     
+,"1" ,"1"     
+,"2" "0, 3, 4"
+,"3" "2, 4"   
+,"4" "2, 3, 6"
+,"5" ,"6"     
+,"6" "4, 5"
+```
+
+`i` is a list of 2-item lists.
+
+In many of the challenge solutions to date we have indexed into lists to pull out particular items. We can index into `i` with the number `3` to pull out the 4th item for example:
+
+```q
+q)i 3
+,"3"
+"2, 4"
+q)i[3] / wrapping in square brackets gives us the same result
+,"3"
+"2, 4"
+```
+
+.. but Q also allows for *nested* indexing. For example, if we wanted to pull out the *second* item in the list at `i[3]` we can do this:
+
+```q
+q)i[3;1] / 2nd item of the 4th item of i
+"2, 4"
+```
+
+... and we can go further still...
+
+```q
+q)i[3;1;3] / 4th item of the 2nd item of the 4th item of i!
+"4"
+```
+
+Whilst this can be very useful in certain circumstances, it also opens up another possibility to us; We can remove the first index argument:
+
+```q
+q)i[;0] / this returns us all the items in the first column of i
+,"0"
+,"1"
+,"2"
+,"3"
+,"4"
+,"5"
+,"6"
+q)i[;1] / and this gives us all items in the second column of i
+,"2"
+,"1"
+"0, 3, 4"
+"2, 4"
+"2, 3, 6"
+,"6"
+"4, 5"
+```
+
+This is the equivalent of applying [flip](http://code.kx.com/q/ref/lists/#flip) to `i` and then indexing in at `0` and `1`:
+
+```q
+q)(flip i)[0]
+,"0"
+,"1"
+,"2"
+,"3"
+,"4"
+,"5"
+,"6"
+q)(flip i)[1]
+,"2"
+,"1"
+"0, 3, 4"
+"2, 4"
+"2, 3, 6"
+,"6"
+"4, 5"
+```
+
+However using this *elided* indexing is easier (and faster to compute).
+
+Getting back to solving **Part 1**, we want to build a dictionary mapping the IDs to their connected programs.
+
+If the keys of the dictionary are the IDs in the list `i[;0]`, the values of the dictionary should be the IDs in `i[;1]`. However, the list `i[;1]` does not contain lists of distinct program IDs, it contains a character list with program IDs separated by commas. To break these character lists into just the IDs we need to split them on `", "`
+
+Leveraging the same `vs` each-right principle we used to split the input on `" <-> "` gives us the following code to split on `", "`
+
+```q
+q)", " vs/: i[;1]
+,,"2"
+,,"1"
+(,"0";,"3";,"4")
+(,"2";,"4")
+(,"2";,"3";,"6")
+,,"6"
+(,"4";,"5")
+```
+
+The commas in this may look a bit weird. `,"2"` means that this is a 1-item list of characters. `,,"2"` means this is a 1-item *list* containing a 1-item list of characters.
+
+Whilst we don't *need* to cast these characters to symbols in order to solve the example input, we cannot leave them as characters when we come to solve the real puzzle input, so let's do that now with the `` `$ `` operator:
+
+```q
+q)`$", " vs/: i[;1]
+,`2
+,`1
+`0`3`4
+`2`4
+`2`3`6
+,`6
+`4`5
+```
+
+We can use `` `$ `` to cast the keys to symbols too:
+
+```q
+q)`$i[;0]
+`0`1`2`3`4`5`6
+```
+
+Recall from [Day 11]({{ site.baseurl }}{% post_url 2018-01-26-aoc-day-11 %}){: .internal-link } that we use the bang, `!` operator to construction a dictionary. The left argument being the keys, and the right argument being the values.
+
+```q
+q)(`$i[;0])!`$", " vs/: i[;1]
+0| ,`2
+1| ,`1
+2| `0`3`4
+3| `2`4
+4| `2`3`6
+5| ,`6
+6| `4`5
+```
+
+Let's save this as `p` for *programs*
+
+```q
+q)p:(`$i[;0])!`$", " vs/: i[;1]
+```
+
+We can then trace our way through this dictionary starting with ID `` `0 ``
+
+```q
+q)p `0 / 0 is connected to 2
+,`2
+q)p `2 / 2 is connected to 0, 3 and 4
+`0`3`4
+q)p `3 / 3 is connected to 2 and 4
+`2`4
+q)p `4 / 4 is connected to 2, 3 and 6
+`2`3`6
+q)p `6 / 6 is connected to 4 and 5
+`4`5
+q)p `5 / 5 is connected to 6
+,`6
+```
+
+Instead of manually tracing through each ID and connected IDs (and connected IDs of those IDs and so on) we should write some code to do it for us.
+
+Let's start by making our indexing operation into a lambda:
+
+```q
+q){ p x } / index into p with key x (the argument to the lambda)
+{ p x }
+q){ p x } `0 / e.g. index in with key `0
+,`2
+q){ p x } `2 / e.g. index in with key `2
+`0`3`4
+```
+
+We want to feed in the result of our lambda back into the lambda, but doing so will give us a list of results, for example
+
+```q
+q){ p x } `0 / 0 is connected to 2
+,`2
+q){ p x } `2 / 2 is connected to 0, 3 and 4
+`0`3`4
+q){ p x } `0`3`4 / 0, 3 and 4 are connected to 4, 2 and 4, and 2, 3 and 6 respectively
+,`2
+`2`4
+`2`3`6
+```
+
+We cannot easily feed these results back into the lambda, we need to flatten them first - so for that we can use [raze](http://code.kx.com/q/ref/lists/#raze).
+
+```q
+q){ raze p x } `0
+,`2
+q){ raze p x } `2
+`0`3`4
+q){ raze p x } `0`3`4 / these results have been flattened
+`2`2`4`2`3`6
+```
+
+... however we are getting duplicates in our results - as IDs are connected to each other - so let's put a [distinct](http://code.kx.com/q/ref/search/#distinct) in to filter out the duplicates:
+
+```q
+q){ distinct raze p x } `0
+,`2
+q){ distinct raze p x } `2
+`0`3`4
+q){ distinct raze p x } `0`3`4 / the duplicates have been removed
+`2`4`3`6
+q){ distinct raze p x } `2`4`3`6
+`0`3`4`2`6`5
+q){ distinct raze p x } `0`3`4`2`6`5
+`2`4`3`6`0`5
+```
+
+The two lists are *equivalent*, but not *identical*. If we feed the results into the lambda again, we will keep getting flipped results:
+
+```q
+q){ distinct raze p x } `2`4`3`6`0`5
+`0`3`4`2`6`5
+q){ distinct raze p x } `0`3`4`2`6`5
+`2`4`3`6`0`5
+q){ distinct raze p x } `2`4`3`6`0`5 / and so on...
+`0`3`4`2`6`5
+```
+
+A simple way to get around this, is to prepend the input, `x`, to the result of the indexing, before we apply the `distinct`:
+
+```q
+q){ distinct x,raze p x } `0
+`0`2
+q){ distinct x,raze p x } `0`2
+`0`2`3`4
+q){ distinct x,raze p x } `0`2`3`4
+`0`2`3`4`6
+q){ distinct x,raze p x } `0`2`3`4`6
+`0`2`3`4`6`5
+q){ distinct x,raze p x } `0`2`3`4`6`5
+`0`2`3`4`6`5
+q){ distinct x,raze p x } `0`2`3`4`6`5 / this yields the same result as the input
+`0`2`3`4`6`5
+```
+
+This way new IDs are added to the end of the list, and once we have exhausted all the mappings we know when to stop.
+
+Q has an adverb to let us perform a function until it yields the same result, the overloaded adverb, `over`. We used this in [Day 10]({{ site.baseurl }}{% post_url 2018-01-17-aoc-day-10 %}){: .internal-link } to iterate through a list, today we are using it to repeatedly call a function until it returns the same result:
+
+```q
+q){ distinct x,raze p x } over `0
+`0`2`3`4`6`5
+```
+
+If we switch out the `over` for a `scan` we will see each iteration along the way:
+
+```q
+q){ distinct x,raze p x } scan `0
+`0
+`0`2
+`0`2`3`4
+`0`2`3`4`6
+`0`2`3`4`6`5
+```
+
+The question is 'how many programs are in the group that contain program 0', we can use `count` to get the number of items in the resulting list
+
+```q
+q)count { distinct x,raze p x } over `0
+6
+```
+
+This matches the answer for the example, so let's plug in our puzzle input and get today's first star.
+
+```q
+q)i:" <-> " vs/: read0 `:input/12.txt / read our input into variable i
+q)p:(`$i[;0])!`$", "vs/:i[;1] / turn i into a dictionary
+q)count { distinct x,raze p x } over `0 / work through the dictionary starting from program 0
+134
+```
+
+## Solving Part 2
+
+> **There are more programs than just the ones in the group containing program ID 0**. The programs you identified just a moment ago are all part of the same group. Now, they would like you to **determine the total number of groups.**
+
+OK, we need to identify how many different groups there are. In **Part 1** we created code that would give us all the IDs in the same group as a given input ID, if we start with the whole universe of program IDs, and then remove each group as we encounter it, we will be left with an empty list containing no IDs - however the total number of iterations will give us the number of groups removed, and thus the total number of groups.
+
+To better explain this, let's break it down using the example.
+
+There are 7 IDs, `0, 1, 2, 3, 4, 5, 6`. If we start with program `0` we get the list `0, 2, 3, 4, 6, 5`.
+
+```q
+q)i:" <-> " vs/: read0 `:input/12x.txt / reset i back to the example
+q)p:(`$i[;0])!`$", "vs/:i[;1] / reset p back to example
+q){ distinct x,raze p x } over `0
+`0`2`3`4`6`5
+```
+
+If we remove these from the original list, we are left with `1`:
+
+```q
+q)`0`1`2`3`4`5`6 except { distinct x,raze p x } over `0
+,`1
+```
+
+If we run the snippet again with `1` as the input it will return `1` (as there are no other programs connected to it).
+
+```q
+q){ distinct x,raze p x } over `1
+,`1
+```
+
+If we take this result from our list we are left with an empty list.
+
+```q
+q)(enlist `1) except enlist `1
+`symbol$()
+```
+
+For completeness, passing in the empty symbol to the snippet returns the empty symbol:
+
+```q
+q){ distinct x,raze p x } over `symbol$()
+`symbol$()
+```
+
+Therefore, what we can do is start with all the program IDs, which is the `key` of di ctionary `p`
+
+```q
+q)key p
+`0`1`2`3`4`5`6
+```
+
+Feed this into a lambda where we are returning the input list `except` for the result of running **Part 1** on the first item in the list (which is `` `0 ``)
+
+```q
+q){ x except { distinct x,raze p x } over first x } key p
+,`1
+```
+
+If we run this again we will get the empty symbol:
+
+```q
+q){ x except { distinct x,raze p x } over first x } enlist `1
+`symbol$()
+```
+
+... and running again with the empty symbol will give us the empty symbol
+
+```q
+q){ x except { distinct x,raze p x } over first x } `symbol$()
+`symbol$(
+```
+
+We can use the adverb `scan` to do this for us:
+
+```q
+q){ x except { distinct x,raze p x } over first x } scan key p
+`0`1`2`3`4`5`6
+,`1
+`symbol$()
+```
+
+If we `count` this we get `3`, which is `1` more than the number of groups (because we are doing an extra iteration with the empty symbol)
+
+```q
+q)count { x except { distinct x,raze p x } over first x } scan key p
+3
+```
+
+We can add `-1` to the count, and this gives us the number of groups for the example:
+
+```q
+q)-1+count { x except { distinct x,raze p x } over first x } scan key p
+2
+```
+
+Let's load up the real puzzle input again, generate `i` and `p` and then fetch the number of groups to get today's second star
+
+```q
+q)i:" <-> " vs/: read0 `:input/12.txt / load up and parse the puzzle input
+q)p:(`$i[;0])!`$", "vs/:i[;1] / create our dictionary
+q)-1+count { x except { distinct x,raze p x } over first x } scan key p / count the groups
+193
+```
+
+## Complete Solution To Day 12
+
+My full solution for **Day 12** is below. It's very close to the code above, however I have defined the lamda operation in **Part 1** as `r`, and rather than saving the input as `i`, I am creating the dictionary in a lambda and assigning the result directly to `p`
+
+<pre class="q" id='solution'></pre>
