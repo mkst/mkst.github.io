@@ -149,7 +149,7 @@ q)sum {(count distinct x)=count x} each (" " vs) each read0 `:input/04.txt
 
 One approach to solving this, would be to create permutations of each word in each list, and see whether there are multiple instances, but a more simple way is to sort each word in the list (such that any anagrams become equal), and then apply the `distinct` operator as in **Part 1**.
 
-The operator [asc](http://code.kx.com/q/ref/sort/#asc) is used to sort a list into **asc**ending order, however if we apply this to the examples, it will sort the list itself, rather than sorting each word in the list.
+The operator [asc](http://code.kx.com/q/ref/sort/#asc) is used to sort a list into <b>asc</b>ending order, however if we apply this to the examples, it will sort the list itself, rather than sorting each word in the list.
 
 ```q
 q)asc ("abcde";"xyz";"ecdab")

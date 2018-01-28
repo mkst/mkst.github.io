@@ -124,7 +124,7 @@ q)(36 - A016754 2) mod floor 0.25*(A016754 3)-A016754 2
 5
 ```
 
-Now, we need to take this away from *half* the length of the side of the spiral (`3`), then take the **abs**olute value of this using the [abs](http://code.kx.com/q/ref/arith-integer/#abs) operator:
+Now, we need to take this away from *half* the length of the side of the spiral (`3`), then take the <b>abs</b>olute value of this using the [abs](http://code.kx.com/q/ref/arith-integer/#abs) operator:
 
 ```q
 q)3 - (36 - A016754 2) mod floor 0.25*(A016754 3)-A016754 2
@@ -247,7 +247,7 @@ We can create a list of rules for when to turn direction.
  - If we have values only to our **north and east**, we need to continue **south**
  - If we have values only to our **west and north**, we need to continue **east**
 
-If we convert **n**orth, **e**ast, **s**outh and **w**est to a boolean array (`nesw`), then we can summarise as follows
+If we convert <b>n</b>orth, <b>e</b>ast, <b>s</b>outh and <b>w</b>est to a boolean array (`nesw`), then we can summarise as follows
 
  - `0001b` or `0011b` then move **north**
  - `0010b` or `0110b` then move **west**
