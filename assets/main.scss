@@ -17,5 +17,24 @@ a.internal-link {
   color: #2a7ae2;
   background-color: #F2F3F4;
   padding:4px;
-  /*font-weight: bold;*/
+}
+
+table {
+  border: solid 1px #eef;
+  border-collapse: collapse;
+  border-spacing: 0;
+  text-align: center;
+  margin: 0 auto;
+}
+thead th {
+  background-color: #eef;
+  border: solid 1px #eef;
+  color: #111;
+  padding: 10px;
+  min-width: 120px;
+}
+tbody td {
+  border: solid 1px #eef;
+  color: #333;
+  padding: 10px;
 }
