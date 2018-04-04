@@ -1,0 +1,328 @@
+---
+layout: post
+title:  "Advent of Code 2017, Day 13"
+date:   2018-04-04 08:00:00 +0000
+last_updated: 2018-04-05
+categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/13.q', 'solution')
+---
+
+# Day 13: Packet Scanners
+
+Take a look at today's [puzzle text](http://adventofcode.com/2017/day/13). The description is a little complicated on the first read through, but the diagrams help to clarify the challenge, and what you have to do in order to solve it.
+
+> **If there is a scanner at the top of the layer as your packet enters it, you are caught**. (If a scanner moves into the top of its layer while you are there, you are not caught: it doesn't have time to notice you before you leave.) **The severity of getting caught on a layer is equal to its depth multiplied by its range**.
+
+The example of each scanner, `S`, going up and down each layer of the firewall is repeated below:
+
+```
+Picosecond 0:
+ 0   1   2   3   4   5   6
+[S] [S] ... ... [S] ... [S]
+[ ] [ ]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+Picosecond 1:
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+Picosecond 2:
+ 0   1   2   3   4   5   6
+[ ] [S] ... ... [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
+
+Picosecond 3:
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... [ ] ... [ ]
+[S] [S]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [S]     [S]
+
+Picosecond 4:
+ 0   1   2   3   4   5   6
+[S] [S] ... ... [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[ ]             [S]     [S]
+                [ ]     [ ]                
+
+```
+
+For the first part of the challenge we need to figure out when we get caught by the scanner and keeping a track of the cumulative *severity*. In order to do this we need to come up with the formula for figuring out where the scanner will be in the layer for a given time offset, or more specifically, whether the scanner will be in the first layer ('range') of each level in the firewall.
+
+We can do this by figuring out how many steps it takes to take the scanner from the top, to the bottom and back to the top again.
+
+| length | steps | notes             |
+|--------|-------|-------------------|
+|   1    |   0   | always at the top |
+|   2    |   2   | every other step  |
+|   3    |   4   | 2 down, 2 up      |
+|   4    |   6   | 3 down, 3 up      |
+|   5    |   8   | 4 down, 4 up      |
+|   6    |   10  | ... etc.          |
+
+<br/>The formula to determine the steps is thus `2 * (n - 1)`. Armed with this we can fire up a `Q` console and get to work.
+
+## Solving Part 1
+
+As usual, we have been given an answer for the example input, `24`, so let's work towards that before tackling our input.
+
+In order to model the layers, we can use a list of numbers, each number representing the depth of that layer. We can represent the gaps in the layers with the null long, `0N`.
+
+If we take the example input and combine with a rotated diagram, we get the following:
+
+```
+0: 3   [ ][ ][ ]     layer 0 (first layer) has length of 3
+1: 2   [ ][ ]        layer 1 has length of 2
+-  -   ...           there is no layer 2, so null
+-  -   ...           there is no layer 3, so null
+4: 4   [ ][ ][ ][ ]  layer 4 has length of 4
+-  -   ...           there is no layer 5, so null
+6: 4   [ ][ ][ ][ ]  layer 5 has length of 4
+```
+
+...which translates to the following list in `Q`
+
+```q
+3 2 0N 0N 4 0N 4
+```
+
+We can save this as `f` for firewall:
+
+```q
+q)f:3 2 0N 0N 4 0N 4
+q)f
+3 2 0N 0N 4 0N 4
+```
+
+We can then apply the `2 * (n - 1)` formula to this list which will give us the number of steps required for the scanner to be at the top of the firewall... Or if we rephrase this, by performing the modulo operation we can determine whether or not the scanner is at the top of the firewall for a given step.
+
+```q
+q){2 * (x - 1)} f
+4 2 0N 0N 6 0N 6
+```
+
+Save the result as g:
+
+```q
+q)g:{2 * x - 1} f
+q)g
+4 2 0N 0N 6 0N 6
+```
+
+There are `8` layers to the example firewall, only `4` of them real. If we start at the left and step through each layer, the step number will increase by 1 for each step we take. This means that by the 7th layer we will be at step 6. Aligning the firewall steps against the steps we take as we go through the firewall we get the following:
+
+```q
+4  2 0N 0N  6 0N  6 / steps required until scanner in 1st layer
+0  1  2  3  4  5  6 / layers (also steps taken to reach layer)
+```
+
+If we perform the modulo operation with the list `0..6` with `4  2 0N 0N  6 0N  6`, we get the following:
+
+```q
+q)0  1  2  3  4  5  6 mod g
+0 1 0N 0N 4 0N 0
+```
+
+The indices where this list is `0` are the indices where we were caught by the scanner, we can use the equality operator, `=` to see this more clearly
+
+```q
+q)0=0  1  2  3  4  5  6 mod g
+1000001b
+```
+
+Adding the `where` keyword will give us the indices themselves:
+
+```q
+q)where 0=0  1  2  3  4  5  6 mod g
+0 6
+```
+
+In order to get the **severity** score, we need to multiply the scanners size ('depth') and what level it is ('range'). The range is equal to its position in the list, so we can save this as variable `w`, and then we need to multiply by the scanner sizes - which are stored in `f`.
+
+```q
+q)w:where 0=0  1  2  3  4  5  6 mod g
+```
+
+We can pull out the scanners we are interested in by indexing into `f` at `w`:
+
+```q
+q)f w
+3 4
+q)f[w] / square notation
+3 4
+```
+
+Multiplying `f[w]` by `w` gets us:
+
+```q
+q)f[w]*w
+0 24
+```
+
+and performing the sum operation on this give us an answer that matches the example solution:
+
+```q
+q)sum f[w]*w
+24
+```
+
+Now we need to parse our [puzzle input](http://adventofcode.com/2017/day/13/input) and get our first star.
+
+```q
+q)read0 `:input/13.txt
+"0: 3"
+"1: 2"
+"2: 4"
+"4: 6"
+"6: 5"
+"8: 6"
+"10: 6"
+"12: 4"
+..
+```
+
+We have two lists of numbers, the first is the scanner's 'range' and the second is the scanner's 'depth'. We can split the lines using `vs` in a couple of different ways.
+
+```q
+q)(": " vs) each read0 `:input/13.txt / brackets and each
+,"0" ,"3"
+,"1" ,"2"
+,"2" ,"4"
+,"4" ,"6"
+,"6" ,"5"
+,"8" ,"6"
+"10" ,"6"
+"12" ,"4"
+..
+q)": "vs/:read0 `:input/13.txt / no brackets and each-right
+,"0" ,"3"
+,"1" ,"2"
+,"2" ,"4"
+,"4" ,"6"
+,"6" ,"5"
+,"8" ,"6"
+"10" ,"6"
+"12" ,"4"
+..
+```
+
+We can then use the big-J cast to convert these lists to longs:
+
+```q
+q)"J"$": "vs/:read0 `:input/13.txt
+0  3
+1  2
+2  4
+4  6
+6  5
+8  6
+10 6
+12 4
+..
+```
+
+.. and then `flip` to get two long lists, rather than many tuples
+
+```q
+q)flip "J"$": "vs/:read0 `:input/13.txt
+0 1 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 52 54 56 58 60 62 64 66 68 70 72 80 82 84 86 90 96 98
+3 2 4 6 5 6 6  4  8  8  9  8  6  14 12 10 12 8  10 8  8  12 12 12 12 14 14 12 12 12 12 14 14 14 14 14 14 18 14 20 14 17 20 24
+```
+
+Save as `i` for input:
+
+```q
+q)i:flip "J"$": "vs/:read0 `:input/13.txt
+```
+
+The `first` of these lists is the range, the `last` is the depth. In order to represent our firewall as a list, with nulls for gaps, we can start off with an empty list of nulls, and then assign the depths to the correct ranges. Due to the gaps in the firewall, the length of the firewall is `1` greater than the `last` element in the `first` list.
+
+```q
+q)(1 + last first i)#0N / generate our list of nulls
+0N 0N 0N 0N 0N 0N 0N 0N 0N 0N 0N 0N 0N 0N ..
+```
+
+We can do this as a one- or two-step operation:
+
+```q
+// multi-step
+q)f:(1 + last first i)#0N / assign it to variable f
+q)f[first i]:last i / fill in depths at ranges
+q)f / admire our handiwork
+3 2 4 0N 6 0N 5 0N 6 0N 6 0N 4 0N 8 0N 8 ..
+
+// single-step
+q)f:@[(1 + last first i)#0N;first i;:;last i] / apply assignment of last i at indices first i
+q)f / admire our handiwork
+3 2 4 0N 6 0N 5 0N 6 0N 6 0N 4 0N 8 0N 8 ..
+```
+
+Now to retrace our earlier steps. Generate the modulo list and save as `g`:
+
+```q
+q)g:{2*x-1}f
+```
+
+Rather than hardcoding the 0..n range, we can `count` the length of `g` and use the `til` operator to generate the range for us:
+
+```q
+q)til count g
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 ..
+```
+
+Perform the modulo:
+
+```q
+q)(til count g) mod g
+0 1 2 0N 4 0N 6 0N 8 0N 0 0N 0 0N 0 0N 2 ..
+```
+
+... check for equality with 0
+
+```q
+q)0=(til count g) mod g
+100000000010101000000000000000000000000000001000000010000000000000000000000000000000000000000000000b
+```
+
+...extract indices where true
+
+```q
+q)where 0=(til count g) mod g
+0 10 12 14 44 52
+```
+
+...save the indices as `w`
+
+```q
+q)w:where 0=(til count g) mod g
+```
+
+...multiply by depths
+
+```q
+q)f[w]*w:where 0=(til count g) mod g
+0 60 48 112 528 728
+```
+
+and finally sum to get today's first star!
+
+```q
+q)sum f[w]*w:where 0=(til count g) mod g
+1476
+```
+
+## Solving Part 2
+
+*Coming soon...*
+
+## Complete Solution To Day 13
+
+My full solution for **Day 13** is shown below:
+
+<pre class="q" id='solution'></pre>
