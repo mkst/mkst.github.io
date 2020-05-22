@@ -87,7 +87,7 @@ We saw that we could either wrap the left arguments to the each in brackets:
 ("\t" vs) each read0 `:input/02.txt
 ```
 
-or we could use the [each-both](http://code.kx.com/q/ref/adverbs/#each-both) adverb `'`.
+or we could use the [each-both](https://code.kx.com/q4m3/6_Functions/#672-each) adverb `'`.
 
 ```q
 "\t" vs ' read0 `:input/02.txt
@@ -95,7 +95,7 @@ or we could use the [each-both](http://code.kx.com/q/ref/adverbs/#each-both) adv
 
 The *each-both* works here because the left argument is an single item (an *atom*), so it takes this as the left argument every time for the *each* against each-right item (the lines in the file).
 
-We cannot use each-both here (we will get a `'length'` error), because our left argument is a list of characters, `" <-> "`, and so each-both will take one item from this list for each item on the right. This is not what we want to achieve, so instead of each-both, we can use [each-right](http://code.kx.com/q/ref/adverbs/#each-right), `/:`. This will use the entire left argument for *each item on the right*.
+We cannot use each-both here (we will get a `'length'` error), because our left argument is a list of characters, `" <-> "`, and so each-both will take one item from this list for each item on the right. This is not what we want to achieve, so instead of each-both, we can use [each-right](https://code.kx.com/q4m3/6_Functions/#674-each-right), `/:`. This will use the entire left argument for *each item on the right*.
 
 ```q
 q)" <-> " vs/: read0 `:input/12x.txt
@@ -185,7 +185,7 @@ q)i[;1] / and this gives us all items in the second column of i
 "4, 5"
 ```
 
-This is the equivalent of applying [flip](http://code.kx.com/q/ref/lists/#flip) to `i` and then indexing in at `0` and `1`:
+This is the equivalent of applying [flip](https://code.kx.com/q/ref/flip/) to `i` and then indexing in at `0` and `1`:
 
 ```q
 q)(flip i)[0]
@@ -288,7 +288,7 @@ Instead of manually tracing through each ID and connected IDs (and connected IDs
 Let's start by making our indexing operation into a lambda:
 
 ```q
-q){ p x } / index into p with key x (the argument to the lambda)
+q){ p x }    / index into p with key x (the argument to the lambda)
 { p x }
 q){ p x } `0 / e.g. index in with key `0
 ,`2
@@ -299,9 +299,9 @@ q){ p x } `2 / e.g. index in with key `2
 We want to feed in the result of our lambda back into the lambda, but doing so will give us a list of results, for example
 
 ```q
-q){ p x } `0 / 0 is connected to 2
+q){ p x } `0     / 0 is connected to 2
 ,`2
-q){ p x } `2 / 2 is connected to 0, 3 and 4
+q){ p x } `2     / 2 is connected to 0, 3 and 4
 `0`3`4
 q){ p x } `0`3`4 / 0, 3 and 4 are connected to 4, 2 and 4, and 2, 3 and 6 respectively
 ,`2
@@ -320,7 +320,7 @@ q){ raze p x } `0`3`4 / these results have been flattened
 `2`2`4`2`3`6
 ```
 
-... however we are getting duplicates in our results - as IDs are connected to each other - so let's put a [distinct](http://code.kx.com/q/ref/search/#distinct) in to filter out the duplicates:
+... however we are getting duplicates in our results - as IDs are connected to each other - so let's put a [distinct](https://code.kx.com/q/ref/distinct/) in to filter out the duplicates:
 
 ```q
 q){ distinct raze p x } `0
@@ -411,7 +411,7 @@ There are 7 IDs, `0, 1, 2, 3, 4, 5, 6`. If we start with program `0` we get the 
 
 ```q
 q)i:" <-> " vs/: read0 `:input/12x.txt / reset i back to the example
-q)p:(`$i[;0])!`$", "vs/:i[;1] / reset p back to example
+q)p:(`$i[;0])!`$", "vs/:i[;1]          / reset p back to example
 q){ distinct x,raze p x } over `0
 `0`2`3`4`6`5
 ```
@@ -444,7 +444,7 @@ q){ distinct x,raze p x } over `symbol$()
 `symbol$()
 ```
 
-Therefore, what we can do is start with all the program IDs, which is the `key` of di ctionary `p`
+Therefore, what we can do is start with all the program IDs, which is the `key` of dictionary `p`
 
 ```q
 q)key p
@@ -499,13 +499,13 @@ Let's load up the real puzzle input again, generate `i` and `p` and then fetch t
 
 ```q
 q)i:" <-> " vs/: read0 `:input/12.txt / load up and parse the puzzle input
-q)p:(`$i[;0])!`$", "vs/:i[;1] / create our dictionary
+q)p:(`$i[;0])!`$", "vs/:i[;1]         / create our dictionary
 q)-1+count { x except { distinct x,raze p x } over first x } scan key p / count the groups
 193
 ```
 
 ## Complete Solution To Day 12
 
-My full solution for **Day 12** is below. It's very close to the code above, however I have defined the lamda operation in **Part 1** as `r`, and rather than saving the input as `i`, I am creating the dictionary in a lambda and assigning the result directly to `p`
+My full solution for **Day 12** is below. It's very close to the code above, however I have defined the lambda operation in **Part 1** as `r`, and rather than saving the input as `i`, I am creating the dictionary in a lambda and assigning the result directly to `p`
 
 <pre class="q" id='solution'></pre>

@@ -9,17 +9,17 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/09.q
 
 # Day 9: Stream Processing
 
-Today's challenge looks like a dream for anyone who loves [regex](https://en.wikipedia.org/wiki/Regular_expression). *Unfortunately* Q doesn't support regex out of the box (and I'm not planning on writing any [C code](http://code.kx.com/wiki/Cookbook/regex) today), so we'll have to solve things a different way. Let's begin by reading today's [challenge text](http://adventofcode.com/2017/day/9).
+Today's challenge looks like a dream for anyone who loves [regex](https://en.wikipedia.org/wiki/Regular_expression). *Unfortunately* Q doesn't support regex out of the box (and I'm not planning on writing any [C code](https://code.kx.com/q/kb/regex/#regex-libraries) today), so we'll have to solve things a different way. Let's begin by reading today's [challenge text](http://adventofcode.com/2017/day/9).
 
->**Garbage begins with < and ends with >**. Between those angle brackets, almost any character can appear, including { and }... Your goal is to **find the total score for all groups in your input**. Each group is assigned a score which is one more than the score of the group that immediately contains it... some program has canceled some of the characters within it using !: inside garbage, **any character that comes after ! should be ignored**, including <, >, and even another !.
+>**Garbage begins with < and ends with >**. Between those angle brackets, almost any character can appear, including { and }... Your goal is to **find the total score for all groups in your input**. Each group is assigned a score which is one more than the score of the group that immediately contains it... some program has cancelled some of the characters within it using !: inside garbage, **any character that comes after ! should be ignored**, including <, >, and even another !.
 
-We need to read through our input file, remove any 'canceled' characters, remove all the garbage, and then count up the groups.
+We need to read through our input file, remove any 'cancelled' characters, remove all the garbage, and then count up the groups.
 
 Let's fire up a Q session and get started.
 
 ## Solving Part 1
 
-The first thing we want to do is remove the cancelled characters from our input stream. For that we can use the string-search-replace operator, [ssr](http://code.kx.com/q/ref/strings/#ssr). This takes three arguments, the first is the string we are working on, the second is the string to search for, and the last is the replacement string. Here is an example to make things clearer
+The first thing we want to do is remove the cancelled characters from our input stream. For that we can use the string-search-replace operator, [ssr](https://code.kx.com/q/ref/ss/#ssr). This takes three arguments, the first is the string we are working on, the second is the string to search for, and the last is the replacement string. Here is an example to make things clearer
 
 ```q
 q)ssr["Monday";"Mon";"Fri"] / change Mon to Fri
@@ -68,16 +68,16 @@ If we rewrite this in Q, line-for-line we will get
 
 ```q
 {[x]
-  if[garbage; / if garbage flag is set to true
-    if[x=">"; / if the input character is ">"
-      garbage::0b]; / set garbage flag to false
-    :""]; /return empty string ""
- / note: we don't need the else as we would already have returned if garbage flag was set
-  if[x="<"; / if the input character is "<"
-    garbage::1b; / set the garbage flag to true
-    :""]; / return the empty string
- / note: we dont need the else here either as we would already have returned if input char was "<"
-  x / return the input character
+  if[garbage;       / if garbage flag is set to true
+    if[x=">";       / if the input character is ">"
+      garbage::0b]; / set global garbage flag to false
+    :""];           / return empty string ""
+  / note: we don't need an else as we would already have returned if garbage flag was set
+  if[x="<";         / if the input character is "<"
+    garbage::1b;    / set the global garbage flag to true
+    :""];           / return the empty string
+ / note: we dont need an else here either as we would already have returned if input char was "<"
+  x                 / return the input character
   }
 ```
 
@@ -98,13 +98,13 @@ rg:{[x]
     if[x=">"; / end of garbage marker
       garbage::0b
       ];
-    :"" / return empty string as this is garbage
+    :""       / return empty string as this is garbage
     ];
-  if[x="<"; / start of garbage section
+  if[x="<";   / start of garbage section
     garbage::1b;
-    :"" / return empty string
+    :""       / return empty string
     ];
-  x / return the input unchanged
+  x           / return the input unchanged
   }
 ```
 
@@ -126,7 +126,7 @@ q){ rg each ssr[x;"!?";""] } "<{!>}>" / "because the first > is canceled."
 ""
 ```
 
-As `rg` returns individual characters back, we need to flatten the results back into a single string. For that, we can use [raze](http://code.kx.com/q/ref/lists/#raze) which does *one* flatten. If we had multiple nested lists, we would need to call `raze` multiple times.
+As `rg` returns individual characters back, we need to flatten the results back into a single string. For that, we can use [raze](https://code.kx.com/q/ref/raze/) which does *one* flatten. If we had multiple nested lists, we would need to call `raze` multiple times.
 
 ```q
 q){ raze rg each ssr[x;"!?";""] } "<{!>}>" / this is a self-contained piece of garbage
@@ -297,6 +297,6 @@ q)garbage_count / part 2
 
 ## Complete Solution To Day 9
 
-My full solution for **Day 9** is below. There are a couple of shortcuts I've taken, for example returning the group score variable, `s`, inline after decrementing rather than on a separate line, and also using the `ssr` as a projection rather than wrapping everything in a lambda.
+My full solution for **Day 9** is below. It has been completely re-written since I first wrote this post; I am iterating over the input without the need for defining any global variables.
 
 <pre class="q" id='solution'></pre>

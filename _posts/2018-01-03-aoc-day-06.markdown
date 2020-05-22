@@ -31,15 +31,15 @@ q)max 0 2 7 0
 We know the maximum of the list, but not *where* it occurs in the list. Leveraging some code from [Day 1]({{ site.baseurl }}{% post_url 2017-12-26-aoc-day-01 %}){: .internal-link } allows us to build the following snippet which give us the indices of the list where the maximum occurs:
 
 ```q
-q)7=0 2 7 0 / where the list is equal to 7
+q)7=0 2 7 0                   / is the list is equal to 7
 0010b
-q)(max 0 2 7 0)=0 2 7 0 / without hardcoding the 7
+q)(max 0 2 7 0)=0 2 7 0       / without hard-coding the 7
 0010b
 q)where (max 0 2 7 0)=0 2 7 0 / use where to get the indices where the list is true
 ,2
 q){ where (max x)=x } 0 2 7 0 / turn it into a lambda to make it more general
 ,2
-q){ where x=max x } 0 2 7 0 / switching around the conditions means we can avoid brackets
+q){ where x=max x } 0 2 7 0   / switching around the conditions means we can avoid brackets
 ,2
 ```
 
@@ -60,14 +60,14 @@ q)w
 
 The instructions tell us that we need to redistribute the blocks found at this location across the other indices in the list.
 
-In order to perform this round-robin we can use the [til](http://code.kx.com/q/ref/arith-integer/#til) operator to create a range of the indices that will receive a share of the redistributed blocks.
+In order to perform this round-robin we can use the [til](https://code.kx.com/q/ref/til/) operator to create a range of the indices that will receive a share of the redistributed blocks.
 
 In our example we know that there are `7` blocks to be distributed (the `max` of the list), and we should start at the next index on from `w`. Note that `til` starts from zero.
 
 ```q
-q)til 7 / til x generates the range of 0..(x-1)
+q)til 7         / til x generates the range of 0..(x-1)
 0 1 2 3 4 5 6
-q)w + til 7 / add our current index w as an offset
+q)w + til 7     / add our current index w as an offset
 2 3 4 5 6 7 8
 q)1 + w + til 7 / and add one more as we need to start from the *next* index
 3 4 5 6 7 8 9
@@ -78,7 +78,7 @@ This suggests that we need to distribute the blocks to indices `4` and higher - 
 ```q
 q)(1 + w + til 7) mod 4 / mod the left by the right
 3 0 1 2 3 0 1
-q)mod[1 + w + til 7;4] / using square-brackets
+q)mod[1 + w + til 7;4]  / using square-brackets
 3 0 1 2 3 0 1
 q)mod[;4] 1 + w + til 7 / or using projections
 3 0 1 2 3 0 1
@@ -86,7 +86,7 @@ q)mod[;4] 1 + w + til 7 / or using projections
 
 We now know which indices will be receiving the redistributed blocks, we need to perform the redistribution.
 
-It would be handy to have a `count` of blocks that should be distributed to each index. We can use the [group](http://code.kx.com/q/ref/dictsandtables/#group) operator to get us halfway there:
+It would be handy to have a `count` of blocks that should be distributed to each index. We can use the [group](https://code.kx.com/q/ref/group/) operator to get us halfway there:
 
 ```q
 q)group mod[;4] 1 + w + til 7
@@ -127,7 +127,7 @@ q)value b
 2 2 2 1
 ```
 
-A very versatile operation in Q is the [amend](http://code.kx.com/q/ref/lists/#amend) function `@`. It can be used with a varying number of parameters, doing a different thing in each case.
+A very versatile operation in Q is the [amend](https://code.kx.com/q/ref/amend/) function `@`. It can be used with a varying number of parameters, doing a different thing in each case.
 
 We will be using it with `4` parameters. It works in the following manner:
 
@@ -137,7 +137,7 @@ We will be using it with `4` parameters. It works in the following manner:
 
 In our case the variable will be our input list `0 2 7 0`, the indices are the keys of the dictionary, `3 0 1 2`, the operator is addition, `+`, and the parameters are the values of our dictionary, `2 2 2 1`.
 
-We can hardcode to begin with:
+We can hard-code to begin with:
 
 ```q
 q)@[0 2 7 0;3 0 1 2;+;2 2 2 1]
@@ -151,28 +151,28 @@ Note that this doesn't match the example, the result *should* be `2 4 1 2` after
 It should look like this:
 
 ```q
-q)@[0 2 0 0;3 0 1 2;+;2 2 2 1] / still hardcoding the indices and parameters
+q)@[0 2 0 0;3 0 1 2;+;2 2 2 1] / still hard-coding the indices and parameters
 2 4 1 2
-q)@[0 2 0 0;key b;+;value b] / using our variable b
+q)@[0 2 0 0;key b;+;value b]   / using our variable b
 2 4 1 2
 ```
 
-Let's put all this together into a somewhat-hardcoded function, and then work to generalise:
+Let's put all this together into a somewhat-hard-coded function, and then work to generalise:
 
 ```q
-{ w:first where x=max x; / move the w inside the function
+{ w:first where x=max x;                    / move the w inside the function
   b:count each group mod[;4] 1 + w + til 7; / save our grouped blocks as b
-  x[w]:0; / reset the maximum
-  @[x;key b;+;value b] / apply the distribution
+  x[w]:0;                                   / reset the maximum
+  @[x;key b;+;value b]                      / apply the distribution
   }
 ```
 
-Not bad, but we still have the max and the length of the input hardcoded. Let's switch them out for Q operations:
+Not bad, but we still have the max and the length of the input hard-coded. Let's switch them out for Q operations:
 
 ```q
 { w:first where x=max x;
   b:count each group mod[;count x] 1 + w + til max x; / count returns length
-  x[w]:0; / reset the maximum
+  x[w]:0;                                             / reset the maximum
   @[x;key b;+;value b]
   }
 ```
@@ -225,7 +225,7 @@ Filling in the comment with code:
 ```q
 while[not (solve r) in s;
   s,:solve r; / add solve r to known states
-  r:solve r / update r as solve r
+  r:solve r   / update r as solve r
   ]
 ```
 
@@ -283,7 +283,7 @@ q)count s
 
 > Out of curiosity, **the debugger would also like to know the size of the loop**: starting from a state that has already been seen, how many block redistribution cycles must be performed before that same state is seen again?
 
-We have kept track of all states in variable `s`. All we need to do is determine the distance between the first occurance of the *current* state (stored in `r`) in the list of states, `s`, and the total length of `s`.
+We have kept track of all states in variable `s`. All we need to do is determine the distance between the first occurrence of the *current* state (stored in `r`) in the list of states, `s`, and the total length of `s`.
 
 ```q
 q)first where r~/:s
@@ -301,6 +301,17 @@ If only all second stars were that easy to get!
 
 ## Complete Solution To Day 6
 
-I called the `solve` function `f` for brevity, otherwise it's exactly as this blog post.
+The key difference between my full solution and this blog post, is that I assigned the unique (`` `u# ``) attribute to the list `s` which allows for `O(1)` lookup rather than `O(N)`, making Part 1 run in a tenth of the time:
+
+```q
+q)s:enlist r:"J"$ "\t" vs first read0 `:input/06.txt    / no attributes
+q)\t while[not (r:f r) in s;s,:r]                       / 360 ms to solve Part 1
+364
+q)s:`u#enlist r:"J"$ "\t" vs first read0 `:input/06.txt / unique attribute
+q)\t while[not (r:f r) in s;s,:r]                       / 37ms to solve Part 1
+37
+```
+
+This is not a big deal for this particular challenge - even without the additional attribute the day is solved in the blink of an eye, but bear attributes in mind for future days where the datasets may be larger, and the [Big O](https://en.wikipedia.org/wiki/Big_O_notation) of the solution becomes a core part of the challenge!
 
 <pre class="q" id='solution'></pre>

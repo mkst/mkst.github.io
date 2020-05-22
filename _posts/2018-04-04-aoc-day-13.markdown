@@ -253,13 +253,13 @@ We can do this as a one- or two-step operation:
 ```q
 // multi-step
 q)f:(1 + last first i)#0N / assign it to variable f
-q)f[first i]:last i / fill in depths at ranges
-q)f / admire our handiwork
+q)f[first i]:last i       / fill in depths at ranges
+q)f                       / admire our handiwork
 3 2 4 0N 6 0N 5 0N 6 0N 6 0N 4 0N 8 0N 8 ..
 
 // single-step
 q)f:@[(1 + last first i)#0N;first i;:;last i] / apply assignment of last i at indices first i
-q)f / admire our handiwork
+q)f                                           / admire our handiwork
 3 2 4 0N 6 0N 5 0N 6 0N 6 0N 4 0N 8 0N 8 ..
 ```
 
@@ -269,7 +269,7 @@ Now to retrace our earlier steps. Generate the modulo list and save as `g`:
 q)g:{2*x-1}f
 ```
 
-Rather than hardcoding the 0..n range, we can `count` the length of `g` and use the `til` operator to generate the range for us:
+Rather than hard-coding the 0..n range, we can `count` the length of `g` and use the `til` operator to generate the range for us:
 
 ```q
 q)til count g

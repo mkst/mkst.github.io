@@ -26,11 +26,11 @@ KDB+ 3.5 2017.11.30 Copyright (C) 1993-2017 Kx Systems
 l32/ 4()core 3635MB mark carbon 127.0.1.1 NONEXPIRE
 
 q)a:5 1 9 5 / be sure to leave a space between each number
-q)count a / we can double-check by counting the length of the list
+q)count a   / we can double-check by counting the length of the list
 4
 ```
 
-Now let's use the [max](http://code.kx.com/q/ref/stats-aggregates/#max-maximum) and [min](http://code.kx.com/q/ref/stats-aggregates/#min-minimum) operators on `a`:
+Now let's use the [max](https://code.kx.com/q/ref/max/) and [min](https://code.kx.com/q/ref/min/) operators on `a`:
 
 ```q
 q)max a
@@ -39,7 +39,7 @@ q)min a
 1
 ```
 
-If we want to subtract `min a` from `max a` we need to use some brackets. This is because Q is interpreted right-to-left and it will consume whatever the next piece is, even if there's more to the left of it. Usually this will result in an error, *however* in this case, if we just write the commands out as below, we actually get the correct answer of `8`!
+If we want to subtract `min a` from `max a` we need to use some brackets. This is because Q is interpreted 'left of right' and it will consume whatever the next piece is, even if there's more to the left of it. Usually this will result in an error, *however* in this case, if we just write the commands out as below, we actually get the correct answer of `8`!
 
 ```q
 q)max a - min a
@@ -49,7 +49,7 @@ q)max a - min a
 In order to find out what is going on (or rather how are we getting the correct result) we need to break down each operation:
 
 ```q
-q)a - 1 / subtract 1 from each item in the list a
+q)a - 1       / subtract 1 from each item in the list a
 4 0 8 4
 q)max 4 0 8 4 / take the maximum of this list
 8
@@ -60,7 +60,7 @@ Now, whilst this gives us the correct result, we are doing extra work that we do
 ```q
 q)(max a) - min a / subtract the min of a (1) from the max of a (9)
 8
-q)max[a] - min a / alternatively we can use square brackets
+q)max[a] - min a  / alternatively we can use square brackets
 8
 q)max[a] - min[a] / we could also use square brackets for the min, but it's not necessary
 8
@@ -118,13 +118,13 @@ q){ (max x) - min x } 2 4 6 8
 
 So far, so good, however we want to run this function against *each row* of the spreadsheet (and then sum up all of these differences).
 
-Q provides a way to do this with the [each](http://code.kx.com/q/ref/control/#each) operator.
+Q provides a way to do this with the [each](https://code.kx.com/q/ref/each/) operator.
 
 First build a list-of-lists with the numbers in the example:
 
 ```q
 q)a:(5 1 9 5;7 5 3;2 4 6 8) / we need to use brackets and semicolons to build up this list of lists
-q)a / double-check that it looks as we expect
+q)a                         / double-check that it looks as we expect
 5 1 9 5
 7 5 3
 2 4 6 8
@@ -166,7 +166,7 @@ q)first read0 `:input/02.txt
 "3093\t749\t3469\t142\t2049\t3537\t1596\t3035\t2424\t3982\t3290\t125\t249\t131\t118\t3138"
 ```
 
-We can use the [vs](http://code.kx.com/q/ref/lists/#vs) operator to split up character lists on a particular character (or characters), in this case `"\t"`:
+We can use the [vs](https://code.kx.com/q/ref/vs/) operator to split up character lists on a particular character (or characters), in this case `"\t"`:
 
 ```q
 q)"\t" vs first read0 `:input/02.txt
@@ -212,7 +212,7 @@ q)"J"$("\t" vs) each read0 `:input/02.txt / wrap brackets around the "\t" vs
 182  93   2180 114  103  1017 95   580  2179 2470 2487 2806 1574 1325 1898 1706
 3753 233  3961 3747 3479 3597 1303 2612 4043 1815 3318 737  197  3943 239  254
 ..
-q)"J"$"\t" vs ' read0 `:input/02.txt / or use the each-both operator '
+q)"J"$"\t" vs ' read0 `:input/02.txt      / or use the each-both operator '
 3093 749  3469 142  2049 3537 1596 3035 2424 3982 3290 125  249  131  118  3138
 141  677  2705 2404 2887 2860 1123 2714 117  1157 2607 1800 153  130  1794 3272
 182  93   2180 114  103  1017 95   580  2179 2470 2487 2806 1574 1325 1898 1706
@@ -230,7 +230,7 @@ q)sum { (max x) - min x } each "J"$"\t" vs ' read0 `:input/02.txt
 
 > It sounds like the goal is to find the only **two numbers in each row where one evenly divides the other** - that is, where the result of the division operation is a whole number. They would like you to **find those numbers** on each line, **divide them**, and **add up each line's result**.
 
-If one number, a, divides into another, b, with no remainder, then we can say that `b modulo a == 0`. As Q is read right-to-left, then this would be transposed to `0 = b mod a`. The first example is `5 9 2 8`, where we can see that `2` will divide into `8` without remainder, and in our Q session:
+If one number, a, divides into another, b, with no remainder, then we can say that `b modulo a == 0`. As Q is interpreted 'right of left', this would be transposed to `0 = b mod a`. The first example is `5 9 2 8`, where we can see that `2` will divide into `8` without remainder, and in our Q session:
 
 ```q
 q)8 mod 2
@@ -239,9 +239,9 @@ q)0=8 mod 2
 1b
 ```
 
-In order to find the result programatically, we can perform the modulo operation on each item in our list against the whole list and see where the result is zero. As we are performing modulo operation against each number, the matches will be where we find **two** results that are zero.
+In order to find the result programmatically, we can perform the modulo operation on each item in our list against the whole list and see where the result is zero. As we are performing modulo operation against each number, the matches will be where we find **two** results that are zero.
 
-We will use the [each-right](http://code.kx.com/q/ref/adverbs/#each-right) operator, `/:`, along with [mod](http://code.kx.com/q/ref/arith-integer/#mod).
+We will use the [each-right](https://code.kx.com/q/ref/maps/#each-left-and-each-right) operator, `/:`, along with [mod](https://code.kx.com/q/ref/mod/).
 
 ```q
 q)5 9 2 8 mod/:5 9 2 8 / mod 5 9 2 8 with each item on the right, 5 then 9 then 2 then 8...
@@ -298,7 +298,7 @@ q){ x first where 2=sum 0=x mod/:x } 5 9 2 8 / where always returns a list, lets
 8
 ```
 
-If we look back, we know that the 3rd item in our list (index `2`) is the other result. In order to `sum` across the list rather than down it we have two options. We can use the `each` operator such that `sum` is applied to `each` list, or we can use [flip](http://code.kx.com/q/ref/lists/#flip) to rotate our results around 90-degrees, and then perform the same operations as before:
+If we look back, we know that the 3rd item in our list (index `2`) is the other result. In order to `sum` across the list rather than down it we have two options. We can use the `each` operator such that `sum` is applied to `each` list, or we can use [flip](https://code.kx.com/q/ref/flip/) to rotate our results around 90-degrees, and then perform the same operations as before:
 
 ```q
 q){ sum each 0=x mod/:x } 5 9 2 8 / we can use 'sum each'
@@ -339,7 +339,7 @@ q){ (x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } 5 9 2 8
 8 2
 ```
 
-Leveraging our knowledge from [Day 1]({{ site.baseurl }}{% post_url 2017-12-26-aoc-day-01 %}){: .internal-link }, we know that we can pass a *list* of arguments to a function using the `.` operator. If it's a built-in operator we need to wrap it in brackets. We want to divide these numbers, so we can use the [divide](http://code.kx.com/q/ref/arith-float/#divide) operator, `%`, combined with `.`:
+Leveraging our knowledge from [Day 1]({{ site.baseurl }}{% post_url 2017-12-26-aoc-day-01 %}){: .internal-link }, we know that we can pass a *list* of arguments to a function using the `.` operator. If it's a built-in operator we need to wrap it in brackets. We want to divide these numbers, so we can use the [divide](https://code.kx.com/q/ref/divide/) operator, `%`, combined with `.`:
 
 ```q
 q){ (%).(x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } 5 9 2 8
@@ -367,7 +367,7 @@ q)sum { (%).(x first where 2=sum a;x first where 2=sum flip a:0=x mod/:x) } each
 
 Rather than performing the modulo operation on each list with each item in the list, we can create a list of distinct pairs to check so that we are not dividing numbers by themselves. In this particular case, it is actually slightly slower - but regardless let's crack on with building this list.
 
-We can combine the [except](http://code.kx.com/q/ref/select/#except) operator with each-right `/:` to join each item of a list with the list excluding that item:
+We can combine the [except](https://code.kx.com/q/ref/except/) operator with each-right `/:` to join each item of a list with the list excluding that item:
 
 ```q
 q){x except/:x} 5 9 2 8
@@ -387,7 +387,7 @@ q){x,/:'x except/:x} 5 9 2 8
 8 5 8 9 8 2
 ```
 
-And we can use [raze](http://code.kx.com/q/ref/lists/#raze) to flatten each list into it's component pairs:
+And we can use [raze](https://code.kx.com/q/ref/raze/) to flatten each list into it's component pairs:
 
 ```q
 q){raze x,/:'x except/:x} 5 9 2 8

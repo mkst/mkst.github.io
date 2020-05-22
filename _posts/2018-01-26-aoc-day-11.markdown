@@ -58,7 +58,7 @@ Now we have a mapping listed for each of the 6 directions, let's fire up a Q ses
 
 ## Solving Part 1
 
-We have come across the Q [dictionary](http://code.kx.com/q/ref/datatypes/#dictionary-and-table) datatype in earlier challenges, but this is the first time we need to construct a full one from scratch.
+We have come across the Q [dictionary](https://code.kx.com/q/basics/dictsandtables/) data type in earlier challenges, but this is the first time we need to construct a full one from scratch.
 
 Dictionary creation is done with the `!` operator, the left argument is a list of keys, the right argument is the list of values. If we try to build a dictionary with an differing count of keys and values we will get a `'length` error.
 
@@ -69,11 +69,11 @@ q)show d:`a`b`c!1 2 3 / symbols as the key, longs as the values
 a| 1
 b| 2
 c| 3
-q)d[`b] / indexing into dicionary with key `b
+q)d[`b] / indexing into dictionary with key `b
 2
-q)d`c / indexing in with key `c
+q)d`c   / indexing in with key `c
 3
-q)d`d / there is no `d in the dictionary, so we get a null of type of the first item
+q)d`d   / there is no `d in the dictionary, so we get a null of type of the first item
 0N
 ```
 
@@ -108,7 +108,7 @@ q)d[`se]:1 -1 0
 q)d[`s]:0 -1 1
 q)d[`sw]:-1 0 1
 q)d[`nw]:-1 1 0
-q)d / check our dictionary look ok
+q)d       / check our dictionary look ok
 n | 0  1  -1
 ne| 1  0  -1
 se| 1  -1 0
@@ -142,9 +142,9 @@ q)d`ne`ne`ne
 In order to find our our distance from the origin, we need to `sum` these up, and take the greatest <b>abs</b>olute value using `max`:
 
 ```q
-q)sum d`ne`ne`ne / this is our position after all steps have been taken
+q)sum d`ne`ne`ne         / this is our position after all steps have been taken
 3 0 -3
-q)abs sum d`ne`ne`ne / abs will give us the absolute distance in any direction
+q)abs sum d`ne`ne`ne     / abs will give us the absolute distance in any direction
 3 0 3
 q)max abs sum d`ne`ne`ne / and max will give us the largest distance from origin
 3
@@ -153,9 +153,9 @@ q)max abs sum d`ne`ne`ne / and max will give us the largest distance from origin
 To show that this wasn't just a fluke, let's try on the next example. `ne,ne,sw,sw` should return us to the origin:
 
 ```q
-q)sum d`ne`ne`sw`sw / the ne and sw movements have cancelled each other out
+q)sum d`ne`ne`sw`sw         / the ne and sw movements have cancelled each other out
 0 0 0
-q)abs sum d`ne`ne`sw`sw / abs of zero is still zero
+q)abs sum d`ne`ne`sw`sw     / abs of zero is still zero
 0 0 0
 q)max abs sum d`ne`ne`sw`sw / max of a list of zeros is zero!
 0
@@ -164,7 +164,7 @@ q)max abs sum d`ne`ne`sw`sw / max of a list of zeros is zero!
 Now for the last two examples:
 
 ```q
-q)max abs sum d`ne`ne`s`s / ne,ne,s,s is 2 steps away
+q)max abs sum d`ne`ne`s`s      / ne,ne,s,s is 2 steps away
 2
 q)max abs sum d`se`sw`se`sw`sw / se,sw,se,sw,sw is 3 steps away
 3
@@ -177,7 +177,7 @@ q)read0 `:input/11.txt
 "s,se,ne,ne,ne,ne,ne,ne,ne,n,sw,sw,nw,sw,n,nw,nw,sw,nw,nw,nw,nw,sw,nw,nw,nw,nw,s,nw,nw,sw,nw,sw,sw,sw,nw,sw,sw,sw,sw,sw,sw,sw,s,sw,sw,sw,sw,se,sw,s,s,sw,s,ne,nw,nw,s,n,s,sw,s,sw,nw,se,s,s,s,s,s,nw,s,nw,s,s,se,se,se,se,se,se,s,se,s,s,se,n..
 ```
 
-A comma-separated list of directions. We will take the `first` line, use `vs` to split on `","` like we did in [Day 10]({{ site.baseurl }}{% post_url 2018-01-17-aoc-day-10 %}){: .internal-link }, but instead of casting to longs with the big-J casting, we will cast to [symbol](http://code.kx.com/q/ref/datatypes/#symbols) using `` `$ ``
+A comma-separated list of directions. We will take the `first` line, use `vs` to split on `","` like we did in [Day 10]({{ site.baseurl }}{% post_url 2018-01-17-aoc-day-10 %}){: .internal-link }, but instead of casting to longs with the big-J casting, we will cast to [symbol](https://code.kx.com/q4m3/2_Basic_Data_Types_Atoms/#242-symbol) using `` `$ ``
 
 ```q
 q)`$ "," vs first read0 `:input/11.txt
@@ -268,8 +268,8 @@ My full solution for **Day 11** is below. Note that I use `sums` for **Part 1**,
 ```q
 q)\t:1000 max max abs sums d`$ "," vs first read0 `:input/11.txt / perform the step 1000 times
 2097
-q)\t:1000 max max abs flip sums d`$ "," vs first read0 `:input/11.txt / around 25% faster
-1450
+q)\t:1000 max max abs flip sums d`$ "," vs first read0 `:input/11.txt / around 30% faster
+1390
 ```
 
 <pre class="q" id='solution'></pre>

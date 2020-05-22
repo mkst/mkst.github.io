@@ -26,7 +26,7 @@ The datatypes will be `symbol`, `long` and `symbol` respectively.
 We can create an empty table in a few different ways:
 
 ```q
-q)([] node:(); weight:(); parent:()) / no datatypes defined for the columns
+q)([] node:(); weight:(); parent:())  / no datatypes defined for the columns
 node weight parent
 ------------------
 q)([] node:`symbol$(); weight:`long$(); parent:`symbol$()) / datatypes defined
@@ -40,16 +40,16 @@ node weight parent
 As there should only be a single entry for each node, we can enforce this by making `node` a primary key:
 
 ```q
-q)([node:()] weight:(); parent:()) / keys are inside the square brackets
+q)([node:()] weight:(); parent:())                       / keys are inside the square brackets
 node| weight parent
 ----| -------------
 q)([node:`symbol$()] weight:`long$(); parent:`symbol$()) / and we lose the semicolon
 node| weight parent
 ----| -------------
-q)`node xkey flip `node`weight`parent!"sjs"$\:() / use xkey to key the table
+q)`node xkey flip `node`weight`parent!"sjs"$\:()         / use xkey to key the table
 node| weight parent
 ----| -------------
-q)1!flip `node`weight`parent!"sjs"$\:() / use 1! to key the table by the first column
+q)1!flip `node`weight`parent!"sjs"$\:()                  / use 1! to key the table by the 1st column
 node| weight parent
 ----| -------------
 ```
@@ -103,7 +103,7 @@ q)except[;"(),"] (read0 `:input/07x.txt) 0 / this makes it easy to switch out th
 "pbga 66"
 q)except[;"(),"] (read0 `:input/07x.txt) 7 / for a seven like this...
 "padx 45 -> pbga havc qoyq"
-q)except[(read0 `:input/07x.txt) 7;"(),"] / but we could write it like this
+q)except[(read0 `:input/07x.txt) 7;"(),"]  / but we could write it like this
 "padx 45 -> pbga havc qoyq"
 q)((read0 `:input/07x.txt) 7) except "()," / or like this using round brackets
 "padx 45 -> pbga havc qoyq"
@@ -162,7 +162,7 @@ q)value l 1
 66
 ```
 
-We can try to [upsert](http://code.kx.com/q/ref/qsql/#upsert) these two values into our table `t` but we will get a `length` error
+We can try to [upsert](https://code.kx.com/q/ref/upsert/) these two values into our table `t` but we will get a `length` error
 
 ```q
 q)t upsert (`pbga;66)
@@ -215,7 +215,7 @@ Now let's write some code that will set the `parent` node for a number of child 
 
 If we remove the first `3` items from lines that contain children, we will be left with just the children.
 
-We can do this using the [drop](http://code.kx.com/q/ref/lists/#_-drop) operator, `_`
+We can do this using the [drop](https://code.kx.com/q/ref/drop/) operator, `_`
 
 ```q
 q)l:" " vs except[;"(),"] (read0 `:input/07x.txt) 7 / use the eighth line of example input
@@ -257,7 +257,7 @@ q){[parent;node] `t upsert (node;0N;parent)}[`$l 0;] each `$3 _ l
 `t`t`t
 ```
 
-Note that as we are using `upsert` we will overwrite the existing values in the table for the given primary key, `node`. If we use [insert](http://code.kx.com/q/ref/qsql/#insert) instead get a key error:
+Note that as we are using `upsert` we will overwrite the existing values in the table for the given primary key, `node`. If we use [insert](https://code.kx.com/q/ref/insert/) instead get a key error:
 
 ```q
 q){[parent;node] `t insert (`$node;0N;`$parent) }[l 0;] each 3 _ l
@@ -589,7 +589,7 @@ q)count exec node from t where parent = `xhth
 
 Zero is treated as if it were false, `0b`, so we will only be executing the true (first) section of our conditional when the node has children, otherwise we will be executing the false (second) second of our conditional.
 
-The function [.z.s](http://code.kx.com/q/ref/dotz/#zs-self) is shorthand for "the current function we are in". We could choose to name our lambda function, for example calling it `traverse`, and we could then use `traverse` as the keyword in place of `.z.s`.
+The function [.z.s](https://code.kx.com/q/ref/dotz/#zs-self) is shorthand for "the current function we are in". We could choose to name our lambda function, for example calling it `traverse`, and we could then use `traverse` as the keyword in place of `.z.s`.
 
 You'll notice that we are trying to update `` t[x;`total_weight] ``, but we do not have a `total_weight` column in our table. We should add one before executing the lambda function.
 
@@ -732,7 +732,7 @@ parent| node           total_weight weights
 tknk  | fwft padx ugml 243 243 251  2
 ```
 
-We should have pinned down the problem parent and it's nodes by this point. We can see that `ugml` is causing the tower to be unbalanced. It's `8` too heavy. If we [ungroup](http://code.kx.com/q/ref/dictsandtables/#ungroup) our table it will make the extraction slightly more straightforward:
+We should have pinned down the problem parent and it's nodes by this point. We can see that `ugml` is causing the tower to be unbalanced. It's `8` too heavy. If we [ungroup](https://code.kx.com/q/ref/ungroup/) our table it will make the extraction slightly more straightforward:
 
 ```q
 q)t:ungroup t
