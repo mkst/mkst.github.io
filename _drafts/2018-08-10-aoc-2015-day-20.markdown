@@ -1,0 +1,213 @@
+---
+layout: post
+title:  ":christmas_tree: Advent of Code 2015, Day 20"
+date:   2018-08-10 08:00:00 +0000
+last_updated: 2018-08-10
+categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2015/20.q', 'solution')
+---
+
+# Day 12: Infinite Elves and Infinite Houses
+
+> blurb from aoc
+
+A naive way to approach this problem is to create an array to represent each of the infinite (!) houses and then iterate up from 1 adding presents to each array location as you visit it. This brute-force approach will work, but it will take you a long time (hours) to get the result. We need a smarter method.
+
+Looking at the houses and number of presents, we can see that the number of presents the house gets is related to the factors that make up that house number, multiplied by 10.
+
+ - House 1 gets 10 presents (factors of 1 are 1, multiplied by 10 = 10)
+ - House 2 gets 30 presents (factors of 2 are 1 and 2, sum is 3, multiplied by 10 = 30)
+ - House 3 gets 40 presents (factors of 3 are 1 and 3, sum is 4, multiplied by 10 = 40)
+ - House 4 gets 70 presents (factors of 4 are 1, 2 and 4, sum is 7, multiplied by 10 = 70)
+
+Armed with this we can devise a more memory-efficient way to solve the problem - we need to take the factors of each house number, starting from 1, and sum them up, multiply them by 10, and see whether this number exceeds the puzzle input^
+
+^ or we can divide our puzzle input by 10 and skip that bit.
+
+## Solving Part 1
+
+In order to get the factors of a number we can use [mod](https://code.kx.com/q/ref/mod/) to figure out if there is any remainder after division:
+
+```q
+q)mod / whilst it is a built-in, it is actually a K function rather than a C one
+k){x-y*x div y}
+```
+
+We can `mod` 10 with the numbers `1` through `10`, if the result is `0` then the number divides perfectly into `10`:
+
+```q
+q)10 mod 1 2 3 4 5 6 7 8 9 10
+0 0 1 2 0 4 3 2 1 0
+```
+
+A quicker way to generate the range is to use [til](https://code.kx.com/q/ref/til/) which creates the range of `0..x`:
+
+```q
+q)til 10
+0 1 2 3 4 5 6 7 8 9
+```
+
+We need to add `1`:
+
+```q
+q)1 + til 10
+1 2 3 4 5 6 7 8 9 10
+```
+
+If we save this as a variable `r` for range we can use it like so:
+
+```q
+q)r:1 + til 10
+q)10 mod r
+0 0 1 2 0 4 3 2 1 0
+```
+
+We want to check whether the result is equal to zero:
+
+```q
+q)0=10 mod r
+1100100001b
+```
+
+.. and then pull out the results [where](https://code.kx.com/q/ref/where/) true
+
+```q
+q)where 0 = 10 mod r
+0 1 4 9
+```
+
+.. and finally index back into the range `r` at these indices:
+
+```q
+q)r where 0 = 10 mod r
+1 2 5 10
+```
+
+We can then [sum](https://code.kx.com/q/ref/sum/) up these values and we have the number of presents delivered to house 10 (technically a 10th of the presents delivered).
+
+```q
+q)sum r where 0 = 10 mod r
+18
+```
+
+If we wrap this up in a lambda we can feed in any input and get the presents for that house
+
+```q
+q){ sum r where 0 = x mod r:1 + til x} 10
+18
+```
+
+However this isn't a particularly optimised way of calculating the factors of a number; in the case of 10 we are checking `6`, `7`, `8`, and `9` which we know aren't factors. If we were calculating factors for the number 100 we would perform the mod operation against 51 through 99 which we know arent factors either!
+
+A simple optimisation would be to divide the input by 2 and only performing `mod` against half of the range:
+
+```q
+q){ sum r where 0 = x mod r:1 + til x div 2 } 10 // this doesnt give us the answer we are after
+8
+```
+
+However this doesn't account for the input itself, so we would need to extend by adding x:
+
+```q
+q){ sum x,r where 0 = x mod r:1 + til x div 2 } 10 // one way
+18
+q){ x + sum r where 0 = x mod r:1 + til x div 2 } 10 // another way
+```
+
+This would speed up our calculations by approximately double but still gives the same result:
+
+```q
+q)\t:100 { x + sum r where 0 = x mod r:1 + til x div 2 } 1000000
+1386
+q)\t:100 { sum r where 0 = x mod r:1 + til x } 1000000
+2810
+q){ x + sum r where 0 = x mod r:1 + til x div 2 } 1000000
+2340
+q){ sum r where 0 = x mod r:1 + til x } 1000000
+2340
+```
+
+However we can improve on this even more - by only performing mod on the range of numbers lower than the square root of the input:
+
+```q
+q){ sum r where 0 = x mod r:1 + til floor sqrt x } 10
+3
+```
+
+If we remove the [sum](https://code.kx.com/q/ref/sum/) we can see that we are only getting back `1` and `2` as factors of `10`, we are missing `5` and `10`.
+
+We can get the missing factors by dividing the input by the factors we have discovered:
+
+```q
+q)10 div 1 2
+10 5
+```
+
+Putting that into our lambda function:
+
+```q
+q){ x div r where 0 = x mod r:1 + til floor sqrt x } 10
+10 5
+```
+
+If we store the first factors as `f` we can join them and get all the factors:
+
+```q
+q){ f,x div f:r where 0 = x mod r:1 + til floor sqrt x } 10
+1 2 10 5
+```
+
+Which looks good, but will give us dupliates for square numbers:
+
+```q
+q){ f,x div f:r where 0 = x mod r:1 + til floor sqrt x } 9
+1 3 9 3
+```
+
+We can add a [distinct](https://code.kx.com/q/ref/distinct/) to remove duplicates and now we have an efficient function for getting all factors of a given number, let's call this `factors`
+
+```q
+q)factors:{ distinct f,x div f:r where 0 = x mod r:1 + til floor sqrt x }
+```
+
+Armed with this function we can tackle today's challenge. We need to [iterate](https://code.kx.com/q/ref/over/) over numbers starting from 1 until the sum of the factors exceeds our puzzle input.
+
+The iterate function has a few different forms, we will be using the form where we iterate while a condition is false. A simple example to iterate while x is less than `10`
+
+```q
+q){ x + 1 }\[{ x < 10 };1] // { function}\[{ condition};starting_value]
+q)q){ x + 1 }\[{ x < 10 };1] // { function}\[{ condition};starting_value] - this is iterate in 'scan' mode
+1 2 3 4 5 6 7 8 9 10
+q)q){ x + 1 }/[{ x < 10 };1] // { function}/[{ condition};starting_value] - this is iterate in 'over' mode
+10
+```
+
+Note that this breaks *after* the clause is broken, it doesn't return us 1..9.
+
+We want to iterate until the condition (sum of factors of a number) is no longer less than the puzzle input. The iterate function will be constructed like so:
+
+```q
+q)(1+)/[{ x > sum factors y}[7;];1]
+4
+```
+
+We are using a projection as condition - the result of the lambda function `{ x + 1 }` will be passed to the condition lambda `{ x > sum factors y}[7;]` which already has the `x` value populated as `7` - thus the result of the lambda function is passed in as `y`.
+
+Replace the `7` with your puzzle input, wait a few seconds (takes approximately 20 seconds to run on my laptop) and you'll have unlocked the first start for today!
+
+
+## Solving Part 2
+
+TBD
+
+### 50 houses, 11* elf number
+
+1006920 is too high
+
+11089
+
+## Complete Solution To Day 20
+
+My full solution for **Day 20** is shown below:
+
+<pre class="q" id='solution'></pre>

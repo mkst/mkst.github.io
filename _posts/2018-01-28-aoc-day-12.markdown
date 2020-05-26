@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 12"
+title:  ":christmas_tree: Advent of Code 2017, Day 12"
 date:   2018-01-28 08:00:00 +0000
 last_updated: 2018-01-28
 categories: aoc tutorial
@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/12.q
 
 # Day 12: Digital Plumber
 
-Take a read through today's [puzzle text](http://adventofcode.com/2017/day/12). I've quoted and highlighted the key part below:
+Take a read through today's [challenge text](https://adventofcode.com/2017/day/12). I've quoted and highlighted the key part below:
 
 > You walk through the village and record the ID of each program and the IDs with which it can communicate directly (your puzzle input). **Each program has one or more programs with which it can communicate, and these pipes are bidirectional**; if 8 says it can communicate with 11, then 11 will say it can communicate with 8. You need to figure out **how many programs are in the group that contains program ID 0**.
 
@@ -38,7 +38,7 @@ A [dictionary](http://code.kx.com/q/ref/datatypes/#dictionary-and-table) mapping
 
 ## Solving Part 1
 
-The most complicated part of **Part 1** is turning the [puzzle input](http://adventofcode.com/2017/day/12/input) into a dictionary.
+The most complicated part of **Part 1** is turning the [puzzle input](https://adventofcode.com/2017/day/12/input) into a dictionary.
 
 Firstly we need to split each line on `" <-> "` so that we get a 2-item list. The first item being the ID of the current program, and the second being a comma-separated list of programs that this ID can communicate with.
 
@@ -393,8 +393,8 @@ q)count { distinct x,raze p x } over `0
 This matches the answer for the example, so let's plug in our puzzle input and get today's first star.
 
 ```q
-q)i:" <-> " vs/: read0 `:input/12.txt / read our input into variable i
-q)p:(`$i[;0])!`$", "vs/:i[;1] / turn i into a dictionary
+q)i:" <-> " vs/: read0 `:input/12.txt   / read our input into variable i
+q)p:(`$i[;0])!`$", "vs/:i[;1]           / turn i into a dictionary
 q)count { distinct x,raze p x } over `0 / work through the dictionary starting from program 0
 134
 ```

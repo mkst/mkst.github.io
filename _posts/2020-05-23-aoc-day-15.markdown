@@ -1,0 +1,287 @@
+---
+layout: post
+title:  ":christmas_tree: Advent of Code 2017, Day 15"
+date:   2020-05-23 08:00:00 +0000
+last_updated: 2020-05-23
+categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/15.q', 'solution')
+---
+
+# Day 15: Dueling Generators
+
+After the complexity of [Day 14]({{ site.baseurl }}{% post_url 2020-05-21-aoc-day-14 %}){: .internal-link }, today's challenge is a nice break both in terms of cognitive load and code to be written. We need to write some number generators. The difficulty only comes in the physical memory constraints of our machine. Snippet from the [challenge text](https://adventofcode.com/2017/day/15) is shown below:
+
+> The generators both work on the same principle. To create its next value, **a generator will take the previous value** it produced, **multiply it by a factor** (generator **A uses 16807**; generator **B uses 48271**), and then **keep the remainder of dividing that resulting product by 2147483647**. That final remainder is the value it produces next.
+> As they do this, a judge waits for each of them to generate its next value, **compares the lowest 16 bits of both values**, and **keeps track of the number of times those parts of the values match**.
+> To get a significant sample, the judge would like to consider **40 million pairs**.
+
+So, we need to iterate **40 million** times, comparing the outputs of Generator A and Generator B. Let's crack on.
+
+## Solving Part 1
+
+We are given the first 5 outputs from the pair of generators, so we can check that we are on the right path. Let's take *Generator A* as the first example.
+
+We need to multiply `65` by `16807` and calculate the remainder after dividing by `2147483647`. We learnt on [Day 2]({{ site.baseurl }}{% post_url 2017-12-27-aoc-day-02 %}){: .internal-link } that we can use `mod` to calculate the remainder, so translating this into Q code:
+
+```q
+q)mod[16807 * 65;2147483647]
+1092455
+```
+
+Turning that into a lambda:
+
+```q
+q){ mod[16807 * x;2147483647] } 65
+1092455
+```
+
+We can check that feeding in the **result** generates the next number in the sequence:
+
+```q
+q){ mod[16807 * x;2147483647] } 65
+1092455
+q){ mod[16807 * x;2147483647] } 1092455
+1181022009
+q){ mod[16807 * x;2147483647] } 1181022009
+245556042
+q){ mod[16807 * x;2147483647] } 245556042
+1744312007
+q){ mod[16807 * x;2147483647] } 1744312007
+1352636452
+```
+
+That's **Generator A** sorted, now for **Generator B**:
+
+```q
+q)mod[48271 * 8921;2147483647]
+430625591
+q){ mod[48271 * x;2147483647] } 8921
+430625591
+```
+
+We can do better than this though. See what happens if we multiply two 2-item lists:
+
+```q
+q)16807 48271 * 65 8921
+1092455 430625591
+```
+
+... and similarly if we `mod` the result by `2147483647`
+
+```q
+q)mod[16807 48271 * 65 8921;2147483647]
+1092455 430625591
+```
+
+Wrapping this in a lambda:
+
+```q
+q){ mod[16807 48271 * x;2147483647] } 65 8921
+1092455 430625591
+```
+
+Tip: We can use the `scan` adverb to perform cause this function to iterate `5` times:
+
+```q
+q){ mod[16807 48271 * x;2147483647] }\[5;65 8921]
+65         8921      
+1092455    430625591
+1181022009 1233683848
+245556042  1431495498
+1744312007 137874439
+1352636452 285222916
+```
+
+So, now we know how to generate numbers to compare, we need to check the lowest 16 bits of each number.
+
+Whilst we can play around with bit manipulation (casting via `0b vs`, taking the last 16 bits, compare them etc), a much simpler alternative is to perform the modulo operation against 65536 (2^16). This effectively ignores any bits higher than the first 16. Here's an example to demonstrate:
+
+```q
+q)0b vs 1233683848
+0000000000000000000000000000000001001001100010001000010110001000b
+q)-16#0b vs 1233683848
+1000010110001000b
+q)-16#0b vs 1233683848
+1000010110001000b
+q)0b sv (48#0b),-16#0b vs 1233683848 / new in 4.0, otherwise it tries to parse as a short
+34184
+q)1233683848 mod 65536
+34184
+```
+
+To check equality of two numbers we can use `~` or `=`:
+
+```q
+q)5 = 10
+0b
+q)5 ~ 10
+0b
+```
+
+We saw on [Day 1]({{ site.baseurl }}{% post_url 2017-12-26-aoc-day-01 %}){: .internal-link }, we can use `.` to feed a list of arguments into a function which helps us to generalise things:
+
+```q
+q){ x = y } . 5 10
+0b
+q)(=) . 5 10
+0b
+q)(~) . 5 10
+0b
+```
+
+We therefore have almost all we need to get the first star: we have a way of generating numbers from generators A and B, and a way to compare the lowest 16 bits.
+
+```q
+q){ mod[16807 48271 * x;2147483647] } 65 8921                   / generate next numbers
+1092455 430625591
+q){ mod[;65536] mod[16807 48271 * x;2147483647] } 65 8921       / mod 65536 to get lowest 16 bits
+43879 54071
+q){ (=) . mod[;65536] mod[16807 48271 * x;2147483647] } 65 8921 / check for equality
+0b
+```
+
+... The problem we have just created is that we cannot feed *this* result back into the function to generate the next 2 numbers to compare. We need to keep track of the numbers AND the result of their equality.
+
+If you are using the 64bit flavour of KDB, and have enough memory, you can simply generate the list of all 40 million numbers and then check the equality via something like this:
+
+```q
+/ will result in 'wsfull on 32bit
+sum {x~y}.'mod[;65536] { mod[16807 48271 * x;2147483647] }\[40000000;65 8921]
+```
+
+... but this uses close to 8GB memory on my machine, which will therefore blow through the memory limits for the 32bit version, so we need a less memory intensive approach. For those of you thinking 'why not break it into 4 batches', feel free to consider that a homework task.
+
+A gut instinct may be to reach for a `do` or a `while` loop, that way we can keep track of the number of matches, as well as the newly generated numbers:
+
+```q
+i:65 8921    / initial generator values
+m:0          / matches
+do[40000000; / 40 million iterations
+  m+:(=) . mod[;65536] i:mod[16807 48271 * i;2147483647]
+  ]
+```
+
+BUT... loops are boring, let's try and solve in a more Q-like manner. We can change our generator function to return the result of the comparison *and* the generated numbers as a 2-item list:
+
+```q
+q){ ( (~). mod[;65536] mod[16807 48271 * x;2147483647] ; mod[16807 48271 * x;2147483647] ) } 65 8921  
+0b                   / first item in the list, 'false'
+1092455 430625591    / second item in the list, the new results
+```
+
+There is some duplication, so lets simplify down by saving the result of the generators as `r`
+
+```q
+q){ ( (~). mod[;65536] r; r:mod[16807 48271 * x;2147483647] ) } / keeping similar projected style
+q){ ( (~). mod[r;65536]; r:mod[16807 48271 * x;2147483647] ) }  / using bracket notation
+q){ ( (~). r mod 65536; r:mod[16807 48271 * x;2147483647] ) }   / using infix notation
+```
+
+Now we know whether the results matched, and what the next values should be, but we cannot feed the output back in as input, as our function is only expecting to receive the numbers to be fed into the generators. We need to update our lambda so that it will support a 2-item list as input.
+
+We can do this by replacing the `x` for `last x` (i.e. the last item in the list), or `x 1` to index into the 2nd item of the list:
+
+```q
+q){ ( (~). r mod 65536; r:mod[16807 48271 * last x;2147483647] ) } (0b;1092455 430625591)
+0b
+1181022009 1233683848
+```
+
+Let's add a scan (`\`) and run it 10 times:
+
+```q
+q){ ( (~). r mod 65536; r:mod[16807 48271 * last x;2147483647] ) }\[10;(0b;1092455 430625591)]
+0b 1092455 430625591    
+0b 1181022009 1233683848
+1b 245556042 1431495498    / the lowest 16 bits match in both 245556042 and 1431495498  
+0b 1744312007 137874439
+0b 1352636452 285222916
+0b 498961622 477717319  
+0b 124339419 213303963  
+0b 271026602 1358994255
+0b 331284527 828718196  
+0b 1621432265 1878146447
+0b 1992081072 1837501385
+```
+
+We need to accumulate the matches, we can do this by adding the previous result (the first element of our input list):
+
+```q
+q){ (first[x] + (~). r mod 65536; r:mod[16807 48271 * last x;2147483647] ) }\[10;(0b;1092455 430625591)]
+0b 1092455 430625591    
+0i 1181022009 1233683848
+1i 245556042 1431495498
+1i 1744312007 137874439
+1i 1352636452 285222916
+1i 498961622 477717319  
+1i 124339419 213303963  
+1i 271026602 1358994255
+1i 331284527 828718196  
+1i 1621432265 1878146447
+1i 1992081072 1837501385
+```
+
+If we swap the `scan` (`\`)for an `over` (`/`) KDB will only return the final result:
+
+```q
+q){ (first[x] + (~). r mod 65536; r:mod[16807 48271 * last x;2147483647] ) }/[10;(0;1092455 430625591)]
+1
+1992081072 1837501385
+```
+
+If, instead of 10 iterations, we perform all **40 million**, the accumulator will match the example, `588`. Note that this takes a considerable amount of time - a little over a minute on my machine:
+
+```q
+q){ (first[x] + (~). r mod 65536; r:mod[16807 48271 * last x;2147483647] ) }/[40000000;(0;1092455 430625591)]
+588
+1534943907 395988311
+```
+
+We need to feed in our own input and re-run the 40 million iterations. Lets `read0` our input file:
+
+```q
+q)read0 `:input/15.txt
+"Generator A starts with 783"
+"Generator B starts with 325"
+```
+
+We can use `vs` to split each on `" "`:
+
+```q
+q)" "vs'read0 `:input/15.txt
+"Generator" ,"A" "starts" "with" "783"
+"Generator" ,"B" "starts" "with" "325"
+```
+
+.. then take the last of each line:
+
+```q
+q)last each " "vs'read0 `:input/15.txt
+"783"
+"325"
+```
+
+Finally using big-J casting to longs:
+
+```q
+q)"J"$last each " "vs'read0 `:input/15.txt
+783 325
+```
+
+So, putting that all together yields today's first star:
+
+```q
+q){ (first[x] + (~). r mod 65536; r:mod[16807 48271 * last x;2147483647] ) }/[40000000;(0;"J"$last each " "vs'read0 `:input/15.txt)]
+650                  / we only care about the 'first' result
+1422403664 377111125 / and can ignore the 'next' numbers coming out of the generators
+```
+
+## Solving Part 2
+
+*Coming soon...*
+
+## Complete Solution To Day 15
+
+My full solution for **Day 15** is below.
+
+<pre class="q" id='solution'></pre>

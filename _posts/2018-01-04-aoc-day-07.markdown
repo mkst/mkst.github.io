@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 07"
+title:  ":christmas_tree: Advent of Code 2017, Day 07"
 date:   2018-01-04 08:00:00 +0000
 last_updated: 2018-01-10
 categories: aoc tutorial
@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/07.q
 
 # Day 7: Recursive Circus
 
-**Day 7** already? You know the drill. Take a read through the [challenge text](http://adventofcode.com/2017/day/7). I've quoted the key paragraph below (emphasis added). Be aware that this post uses lots of functionality we've not seen in the previous days' solutions.
+**Day 7** already? You know the drill. Take a read through the [challenge text](https://adventofcode.com/2017/day/7). I've quoted the key paragraph below (emphasis added). Be aware that this post uses *lots* of functionality we've not seen in the previous days' solutions; the first one being [tables!](https://code.kx.com/q/learn/startingkdb/tables/)
 
 > You ask each program to yell out their **name, their weight, and (if they're holding a disc) the names of the programs immediately above them** balancing on that disc. You write this information down (your puzzle input).
 
@@ -19,7 +19,7 @@ In order to get today's first star we need to identify the parent node; that is,
 
 ## Solving Part 1
 
-We ought to be able to represent our puzzle input in a table. We need to keep track of `node`, `weight` and the `parent` of that node. We should then be able to select from our table where the node has no parent, and get the first star.
+We ought to be able to represent our [puzzle input](https://adventofcode.com/2017/day/7/input) in a table. We need to keep track of `node`, `weight` and the `parent` of that node. We should then be able to select from our table where the node has no parent, and get the first star.
 
 The datatypes will be `symbol`, `long` and `symbol` respectively.
 
@@ -257,7 +257,7 @@ q){[parent;node] `t upsert (node;0N;parent)}[`$l 0;] each `$3 _ l
 `t`t`t
 ```
 
-Note that as we are using `upsert` we will overwrite the existing values in the table for the given primary key, `node`. If we use [insert](https://code.kx.com/q/ref/insert/) instead get a key error:
+**Note:** As we are using `upsert`, we will overwrite the existing values in the table for the given primary key, `node`. If we use [insert](https://code.kx.com/q/ref/insert/) instead, we get a key error:
 
 ```q
 q){[parent;node] `t insert (`$node;0N;`$parent) }[l 0;] each 3 _ l
@@ -327,7 +327,7 @@ However, as the table is *keyed* on `node`, we can use the `node` we are after t
 q)t[`pbga] / we can use square brackets
 weight| 0N
 parent| `padx
-q)t `pbga / or we can do a naked indexing
+q)t `pbga  / or we can do a naked indexing
 weight| 0N
 parent| `padx
 ```
@@ -346,14 +346,14 @@ q)t[`pbga; `weight] / note that this is null because we overwrote it in the lamb
 0N
 ```
 
-Now we need to update our `upsert` operations. Firstly instead of upserting a hardcoded null symbol, `` ` ``, as the `parent`, we can upsert `` t[node;`parent] ``.
+Now we need to update our `upsert` operations. Firstly instead of upserting a hard-coded null symbol, `` ` ``, as the `parent`, we can upsert `` t[node;`parent] ``.
 
 ```q
 q)`t upsert (`$l 0;"J"$l 1;t[`$l 0;`parent]) / perhaps we should save $l 0 as 'node' for simplicity?
 `t
 ```
 
-.. and instead of upserting a hardcoded null long, `0N`, as the `weight` when processing children, we can upsert `` t[node;`weight`] ``
+.. and instead of upserting a hardcoded null long, `0N`, as the `weight` when processing children, we can upsert `` t[node;`weight] ``
 
 ```q
 q){[parent;node] `t upsert (node;t[node;`weight];parent)}[`$l 0;] each `$3 _ l
@@ -365,7 +365,7 @@ Let's clear out our table `t` and `upsert` lines `0` and `7` from the example in
 ```q
 q)delete from `t / delete everything from table t, saving the result back into t
 `t
-q)t / confirm that it's empty
+q)t              / confirm that it's empty
 node| weight parent
 ----| -------------
 ```
@@ -421,7 +421,7 @@ qoyq|        padx
 
 Now that we can parse the two types of input line (with or without children), we need to build a function that we can apply to `each` line of the input file.
 
-In psuedo-code, we want to do something like this:
+In pseudo-code, we want to do something like this:
 
 ```
 for each line in the input:
@@ -438,7 +438,7 @@ Converting this into Q, and using the snippets we created earlier, gives us the 
   `t upsert (`$l 0;"J"$l 1;t[`$l 0;`parent]);
   if[3<count l;
     {[parent;node] `t upsert (node;t[node;`weight];parent)}[`$l 0;] each `$3_l
-  ]
+    ]
   } each read0 `:input/07x.txt
 ```
 
@@ -450,7 +450,7 @@ There is a lot of repetition of the `` `$l 0 ``, so let's call that `n` for node
   `t upsert (n;"J"$l 1;t[n;`parent]); / update weight for node
   if[3<count l;
     {[parent;node] `t upsert (node;t[node;`weight];parent)}[n;] each `$3_l / update parent for node
-  ]
+    ]
   } each read0 `:input/07x.txt
 ```
 
@@ -480,7 +480,7 @@ t:`node xkey flip `node`weight`parent!"sjs"$\:()
   `t upsert (n;"J"$l 1;t[n;`parent]); / update weight for node
   if[3<count l;
     {[parent;node] `t upsert (node;t[node;`weight];parent)}[n;] each `$3_l / update parent for node
-  ]
+    ]
   } each read0 `:input/07x.txt
 ```
 
@@ -507,7 +507,7 @@ jptl| 61     ugml
 gyxo| 61     ugml
 ```
 
-From a quick glance it's easy to see that `tknk` has nothing in the parent columnm, and is thus the overall parent, or "at the bottom of the tower" in AoC parlance. In order to pull out the entry without a parent we can use the following Q statement:
+From a quick glance it's easy to see that `tknk` has nothing in the parent column, and is thus the overall parent, or "at the bottom of the tower" in AoC parlance. In order to pull out the entry without a parent we can use the following Q statement:
 
 ```q
 q)first exec node from t where null parent
@@ -531,13 +531,13 @@ Phew. That felt like a lot of work to get our first star. Unfortunately there's 
 
 First we need to calculate weights of each 'tower'. That is, the sum of the weights of the child nodes added to the weight of the parent, for each parent node.
 
-Once we have all the weights calculated, we ought to be able to work out which parent children with inequal weight, and then work out what the weight needs to be for the single program with incorrect weight.
+Once we have all the weights calculated, we ought to be able to work out which parent has children with unequal weight, and then work out what the weight needs to be for the single program with incorrect weight.
 
 Easy eh?
 
-We have collapsed the program tower (tree) heirarchy into a table, but we can still traverse it in a tree-like manner. We need to start with the parent node, and then work our way through each child node, and each child node of that node, and so on until we reach the nodes that have no children.
+We have collapsed the program tower (tree) hierarchy into a table, but we can still traverse it in a tree-like manner. We need to start with the parent node, and then work our way through each child node, and each child node of that node, and so on until we reach the nodes that have no children.
 
-The most programatic way to do this is through [recursion](https://en.wikipedia.org/wiki/Recursion). That is, we have a function which calls itself to help solve the problem.
+The most programmatic way to do this is through [recursion](https://en.wikipedia.org/wiki/Recursion). That is, we have a function which calls itself to help solve the problem.
 
 If we write out the problem in pseudo-code, it will look something like this (starting from the parent node)
 
@@ -657,7 +657,7 @@ Before we begin, let's take a copy of our table as I have a feeling we'll need i
 q)t_orig:t / save t as t_orig
 ```
 
-Sticking with the example input, let's remove all child nodes that do not have any children of their own, the *leaves* of the tree. These have zero total_weight:
+Sticking with the example input, let's remove all child nodes that do not have any children of their own, the *leaves* of the tree. These have zero `total_weight`:
 
 ```q
 q)delete from `t where total_weight = 0 / note we are using `t to update t with the result
@@ -686,7 +686,9 @@ tknk| 41            778
 ugml| 68     tknk   251
 ```
 
-We want to *group* our nodes up by `parent` so that we can see where the total_weight differs. Note that we need to explicitly include the `node`, `weight` and `total_weight` in our query so that all the results are included; by default Q will take the `last` result.
+We want to *group* our nodes up [by](https://code.kx.com/q4m3/9_Queries_q-sql/#952-update-by) `parent` so that we can see where the `total_weight` differs.
+
+**Note:** We need to explicitly include the `node`, `weight` and `total_weight` in our query so that all the results are included; by default Q will take the `last` result when `by` is used.
 
 ```q
 q)select node, weight, total_weight by parent from t
@@ -712,7 +714,7 @@ In order to keep our grouped results, we need to assign the result of this query
 q)t:select node, weight, total_weight, weights:count distinct total_weight by parent from t
 ```
 
-Now we can identify the parent that has the inequal children by selecting out where `weights` is greater than 1
+Now we can identify the parent that has the unequal children by selecting out where `weights` is greater than 1
 
 ```q
 q)t:select from t where weights > 1

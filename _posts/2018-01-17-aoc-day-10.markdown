@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 10"
+title:  ":christmas_tree: Advent of Code 2017, Day 10"
 date:   2018-01-20 08:00:00 +0000
 last_updated: 2018-01-20
 categories: aoc tutorial
@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/10.q
 
 # Day 10: Knot Hash
 
-If you were hoping for some slightly more hardcore challenges from the AoC, then **Day 10** should be right up your street. There's hexadecimal, bitwise XOR, ASCII and all sorts of other fun things going on. As always, let's take a look at the [challenge text](http://adventofcode.com/2017/day/10) and see where to begin!
+If you were hoping for some slightly more hardcore challenges from the AoC, then **Day 10** should be right up your street. There's hexadecimal, bitwise XOR, ASCII and all sorts of other fun things going on. As always, let's take a look at the [challenge text](https://adventofcode.com/2017/day/10) and see where to begin!
 
 ## Solving Part 1
 
@@ -75,7 +75,7 @@ q)@[l;(p + til 3) mod count l;:;reverse l (p + til 3) mod count l]
 2 1 0 3 4
 ```
 
-Note that this does not save the updated the value in `l` unless we use `` `l `` or assign the result back into `l` as follows:
+**Note:** This does not save the updated the value in `l` unless we use `` `l `` or assign the result back into `l` as follows:
 
 ```q
 q)l:@[l;(p + til 3) mod count l;:;reverse l (p + til 3) mod count l]
@@ -334,7 +334,7 @@ q)prd 2#knot[til 5;3 4 1 5]
 12
 ```
 
-OK! We can handle the example as a one-liner. Let's take a look at the [puzzle input](http://adventofcode.com/2017/day/10/input) for today.
+OK! We can handle the example as a one-liner. Let's take a look at the [puzzle input](https://adventofcode.com/2017/day/10/input) for today.
 
 ```q
 q)read0 `:input/10.txt

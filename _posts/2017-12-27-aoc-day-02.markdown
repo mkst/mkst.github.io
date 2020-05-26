@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 02"
+title:  ":christmas_tree: Advent of Code 2017, Day 02"
 date:   2017-12-27 08:00:00 +0000
 last_updated: 2018-01-06
 categories: aoc tutorial
@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/02.q
 
 # Day 2: Corruption Checksum
 
-One day down, 24 to go! Take a read through the [challenge text](http://adventofcode.com/2017/day/2) for **Day 2**, the crux of the challenge is quoted below (emphasis added).
+One day down, 24 to go! Take a read through the [challenge text](https://adventofcode.com/2017/day/2) for **Day 2**, the crux of the challenge is quoted below (emphasis added).
 
 > The spreadsheet consists of rows of apparently-random numbers. To make sure the recovery process is on the right track, they need you to calculate the spreadsheet's checksum. For each row, **determine the difference between the largest value and the smallest value**; the checksum is the **sum of all of these differences**.
 
@@ -46,7 +46,7 @@ q)max a - min a
 8
 ```
 
-In order to find out what is going on (or rather how are we getting the correct result) we need to break down each operation:
+In order to find out what is going on (or rather how we are getting the correct result) we need to break down each operation:
 
 ```q
 q)a - 1       / subtract 1 from each item in the list a
@@ -55,7 +55,7 @@ q)max 4 0 8 4 / take the maximum of this list
 8
 ```
 
-Now, whilst this gives us the correct result, we are doing extra work that we dont need to be doing - we are subtracting the minimum number from every number in the list, and then taking the maximum. We just want to subtract two individual numbers from one another, therefore we wrap `max a` in brackets so that the `min a` is subtracted from the *result* of `max a`:
+Now, whilst this gives us the correct result, we are doing extra work that we don't need to be doing - we are subtracting the minimum number from every number in the list, and then taking the maximum. We just want to subtract two individual numbers from one another, therefore we wrap `max a` in brackets so that the `min a` is subtracted from the *result* of `max a`:
 
 ```q
 q)(max a) - min a / subtract the min of a (1) from the max of a (9)
@@ -78,9 +78,9 @@ A few fun facts about Q functions:
 A simple function that adds `1` to the input can be written as follows:
 
 ```q
-q) {[INPUT] INPUT + 1 }
-q) {[x] x + 1 }
-q) { x + 1 }
+q){[INPUT] INPUT + 1 }
+q){[x] x + 1 }
+q){ x + 1 }
 ```
 
 We can try out these (anonymous) functions in place:
@@ -144,7 +144,7 @@ q)sum { (max x) - min x } each a
 18
 ```
 
-Now that we have the code to solve **Part 1**, we need to apply it to our [puzzle input](http://adventofcode.com/2017/day/2/input) so that we can get the first star.
+Now that we have the code to solve **Part 1**, we need to apply it to our [puzzle input](https://adventofcode.com/2017/day/2/input) so that we can get the first star :star2:.
 
 As with [Day 1]({{ site.baseurl }}{% post_url 2017-12-26-aoc-day-01 %}){: .internal-link }, we use `read0` to read in the input file:
 

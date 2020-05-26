@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 08"
+title:  ":christmas_tree: Advent of Code 2017, Day 08"
 date:   2018-01-13 08:00:00 +0000
 last_updated: 2018-01-13
 categories: aoc tutorial
@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/08.q
 
 # Day 8: I Heard You Like Registers
 
-[Day 7]({{ site.baseurl }}{% post_url 2018-01-04-aoc-day-07 %}){: .internal-link } was a bit of a pig. Today is a cakewalk by comparison, although we will use a couple of new operators to keep things interesting. Let's read the [challenge text](http://adventofcode.com/2017/day/8) and crack on.
+[Day 7]({{ site.baseurl }}{% post_url 2018-01-04-aoc-day-07 %}){: .internal-link } was a bit of a pig. Today is a cakewalk by comparison, although we will use a couple of new operators to keep things interesting. Let's read the [challenge text](https://adventofcode.com/2017/day/8) and crack on.
 
 > Each instruction consists of several parts: **the register to modify**, whether to **increase or decrease that register's value**, the **amount by which to increase or decrease it**, **and a condition**. **If the condition fails, skip the instruction** without modifying the register. The **registers all start at 0**.
 
@@ -368,7 +368,7 @@ q)max value each r
 1
 ```
 
-All that's left to do is run this for our [puzzle input](http://adventofcode.com/2017/day/8/input). Putting this all together gives us
+All that's left to do is run this for our [puzzle input](https://adventofcode.com/2017/day/8/input). Putting this all together gives us
 
 ```q
 q)reorder:{ "if[.r.",(x 3),$["=="~(x 4);"=";"!="~x 4;"<>";x 4],(x 5),";.r.",(x 0),$["inc"~(x 1);"+:";"-:"],(x 2),"]" }

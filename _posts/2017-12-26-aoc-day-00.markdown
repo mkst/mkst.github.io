@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 00"
+title:  ":turtle: Advent of Code 2017, Day 00"
 date:   2017-12-26 08:00:00 +0000
 last_updated: 2018-01-13
 categories: aoc tutorial
@@ -8,17 +8,17 @@ categories: aoc tutorial
 
 # Day 0 - Firing up our first q/kdb+ session
 
-Getting started with q/kdb+ isn't quite as straightforward as simply downloading the binary file and double-clicking. You can read through the *official* getting started guide on the [Kx Wiki](https://code.kx.com/q/learn/install/), or you can follow the steps below.
+Getting started with q/kdb+ isn't *quite* as straightforward as simply downloading the binary file and double-clicking. You can read through the *official* getting started guide on the [Kx Wiki](https://code.kx.com/q/learn/install/), or you can follow the steps below.
 
  - [Linux Instructions](#linux-instructions)
  - [Windows Instructions](#windows-instructions)
  - Mac instructions will follow later...
 
-**Note:** I am assuming that you are using the *free* 32bit version. If you are using the 64bit version, following the instructions provided by Kx which will explain about the `k4.lic` license file.
+**Note:** I am assuming that you are using the *free* 32bit version. If you are using the 64bit version, follow the instructions provided by Kx which will explain about the `k4.lic` or `kc.lic` license files.
 
 ## Linux Instructions
 
-Firstly download the `Linux-x86` zip from [kx.com/download/](http://kx.com/download/).
+Firstly download the `Linux-x86` zip from [kx.com/download/](https://kx.com/download/).
 
 The following assumes we downloaded the zip to `~/Downloads/linuxx86.zip` and want all our code to live in `~/kdb`
 
@@ -40,15 +40,15 @@ Install `rlwrap` if it is not already present:
 
 ```sh
 $ sudo apt-get install rlwrap # debian
-$ sudo yum install rlwrap # redhat
-$ sudo pacman -S rlwrap # arch
+$ sudo yum install rlwrap     # redhat
+$ sudo pacman -S rlwrap       # arch
 ```
 
 Unless you're running a 32bit version of Linux, you'll likely need to install the `libc` 32bit libraries:
 
 ```sh
 $ sudo apt-get install libc6-i386 # debian
-$ sudo yum install glibc.i686 # redhat
+$ sudo yum install glibc.i686     # redhat
 ```
 
 Now let's create a script to setup our environment, note that this just contains the basics, but we can extend as required later.

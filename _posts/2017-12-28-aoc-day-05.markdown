@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 05"
+title:  ":christmas_tree: Advent of Code 2017, Day 05"
 date:   2017-12-28 08:00:00 +0000
 last_updated: 2018-01-06
 categories: aoc tutorial
@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/05.q
 
 # Day 5: A Maze of Twisty Trampolines, All Alike
 
-Read through today's [challenge text](http://adventofcode.com/2017/day/5). As usual, I've quoted the crux of the challenge below and highlighted the key words.
+Read through today's [challenge text](https://adventofcode.com/2017/day/5). As usual, I've quoted the crux of the challenge below and highlighted the key words.
 
 > **Start at the first instruction** in the list. The goal is to follow the jumps **until one leads outside the list**. In addition, these instructions are a little strange; **after each jump, the offset of that instruction increases by 1**.
 
@@ -58,20 +58,20 @@ To break that down into code, we need to:
 To put that into Q code:
 
 ```q
-- j:l[p] / set j to l at index p
-- l[p]+:1 / update the value of l at index p by 1
-- c+:1 / update the value of c by one
-- p+:j / add the jump offset to position p
+j:l[p]  / set j to l at index p
+l[p]+:1 / update the value of l at index p by 1
+c+:1    / update the value of c by one
+p+:j    / add the jump offset to position p
 ```
 
 We need to keep doing this until we jump past the end of our list. If you try to index into a list past it's end (or before it's start) you will get a null of the type of the first item in the list. For example:
 
 ```q
-q)(1 2 3 4) 4 / this will return a null long
+q)(1 2 3 4) 4      / this will return a null long
 0N
-q)"abcd" 4 / this will return a null character (empty space)
+q)"abcd" 4         / this will return a null character (empty space)
 " "
-q)`a`b`c`d 4 / this will return the null symbol (backtick)
+q)`a`b`c`d 4       / this will return the null symbol (backtick)
 `
 q)(`a;1;1.5;"h") 4 / this will return a null symbol (type of first item in the list)
 `
@@ -169,8 +169,8 @@ The structure for a `while` loop is shown below:
 ```q
 while[ / condition that will evaluate to true or false;
   / do these operations;
-  / separated by semicolons;
-  / except the last one
+  / separated each one by semicolons;
+  / we don't need a semicolon after the last statement
   ]
 ```
 In this case we want to keep doing the jumping until `l[p]` is `null`. Flipping this on it's head we want to do the jumping *while* `l[p]` is `not null`.
@@ -179,10 +179,10 @@ If we were using a text editor we could write it across multiple lines like so:
 
 ```q
 while[not null l[p];
-  j:l[p]; / set j to l at index p
+  j:l[p];  / set j to l at index p
   l[p]+:1; / update the value of l at index p by 1
-  c+:1; / update the value of c by one
-  p+:j] / add the jump offset to position p
+  c+:1;    / update the value of c by one
+  p+:j]    / add the jump offset to position p
 ```
 
 ... but if we want to run at the Q prompt, we need to join everything together into a single line:
@@ -203,7 +203,7 @@ q)c
 5
 ```
 
-Great. Now we need to run against our [puzzle input](http://adventofcode.com/2017/day/5/input).
+Great. Now we need to run against our [puzzle input](https://adventofcode.com/2017/day/5/input).
 
 As usual we want to use `read0` to read the file into our session:
 

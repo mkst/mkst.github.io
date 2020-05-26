@@ -13,7 +13,7 @@ q)-1"Hello, World!";
 Hello, World!
 ```
 
-After completing the 2017 [AdventOfCode](http://adventofcode.com/) challenges using [q/kdb+](http://www.kx.com), I decided that I would revisit my solutions and write them up as blog posts in the hope that someone may find them useful.
+After completing the 2017 [AdventOfCode](https://adventofcode.com/) challenges using [q/kdb+](https://www.kx.com), I decided that I would revisit my solutions and write them up as blog posts in the hope that someone may find them useful.
 
 Each post will detail parts 1 and 2 of the day's challenge. I'll explain my thought process, building up each solution piece-by-piece.
 

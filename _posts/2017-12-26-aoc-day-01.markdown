@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 01"
+title:  ":christmas_tree: Advent of Code 2017, Day 01"
 date:   2017-12-26 08:15:00 +0000
 last_updated: 2018-01-06
 categories: aoc tutorial
@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/01.q
 
 # Day 1: Inverse Captcha
 
-Welcome to **Day 1**. Take a read through the [challenge text](http://adventofcode.com/2017/day/1) for today, the crux of the challenge is quoted below (emphasis added).
+Welcome to **Day 1**. Take a read through the [challenge text](https://adventofcode.com/2017/day/1) for today, the crux of the challenge is quoted below (emphasis added).
 
 > The captcha requires you to review a sequence of digits (your puzzle input) and find the **sum** of all **digits that match the next digit** in the list. The **list is circular**, so the digit after the last digit is the first digit in the list.
 
@@ -19,12 +19,12 @@ If we were to solve this in [Python](https://www.python.org/), we might do somet
 
 ```py
 with open("input/01.txt") as f:
-  l = f.readline()[:-1]            # drop the trailing "\n" character
-  m = []                           # our list of matches
+  l = f.readline()[:-1]            # drop the trailing newline character
+  m = []                           # variable to track our list of matches
   for i in range(len(l)):          # loop through our list
     if l[i] == l[(i+1) % len(l)]:  # check current against next (modulo to wrap-around)
       m.append(l[i])               # add the match to list m
-  print sum(map(int, m))           # convert to ints and sum up
+  print sum(map(int, m))           # convert to integers and sum up
 ```
 
 However, we are going to solve the problem in Q, and we should aim to avoid loops if we can.
@@ -71,7 +71,7 @@ q)b=a / = descends into the list and compares each item one-by-one, the result i
 1010b
 ```
 
-Note that if we use the [match](https://code.kx.com/q/ref/match/) operator `~` we will be checking whether the *entire* list `a` is equal to the *entire* list `b`:
+**Note:** If we use the [match](https://code.kx.com/q/ref/match/) operator `~` we will be checking whether the *entire* list `a` is equal to the *entire* list `b`:
 
 ```q
 q)b~a / this is not what we want
@@ -204,12 +204,12 @@ q)sum value each a where a=1 rotate a   / look ma, no brackets!
 3
 ```
 
-Let's try running this against our [puzzle input](http://adventofcode.com/2017/day/1/input) which should be downloaded and saved to `~/q/input/01.txt`.
+Let's try running this against our [puzzle input](https://adventofcode.com/2017/day/1/input) which should be downloaded and saved to `~/kdb/q/input/01.txt`.
 
 After a quick look on the KX wiki, [read0](https://code.kx.com/q/ref/read0/) is the operator of choice to load the input file into our session.
 
 ```q
-q)read0 `:input/01.txt
+q)read0 `:input/01.txt / using the relative path
 "89219596999173583791527386872954869423796749511541239937319456252694758533723379356827826527919988319716763479129317798615256623671833261753648723687974716799998336383225791244575688731487922992586447776135713985554852251379889985389661..
 ```
 
@@ -253,7 +253,7 @@ q)sum value each a where a=1 rotate a
 1047
 ```
 
-> *Congratulations, you got your first star!*
+> Congratulations, you got your first star! :star2:
 
 **Note:** If we want a one-liner, we can assign variable `a` on the fly:
 
@@ -261,7 +261,6 @@ q)sum value each a where a=1 rotate a
 q)sum value each a where a=1 rotate a:first read0 `:input/01.txt
 1047
 ```
-
 ### Bonus 1
 
 Below is a comparison of the different ways we can convert a character list to an integer/long list. The `\t` command returns the time taken in milliseconds to execute the operation(s). We may need to perform the operation many times if it is particularly trivial in order to get a non-zero result. `\t:1000` performs each operation `1000` times and returns the total time taken in milliseconds:
@@ -278,6 +277,42 @@ q)\t:1000 sum -48+"j"$a where a=1 rotate a:first read0 `:input/01.txt    / with 
 ```
 
 Vector operations are where `q/kdb+` shines, and you should always strive to perform operations *across* lists rather than on each item in a list where possible.
+
+### Bonus 2
+
+As we have put our input file inside the `q` directory, we can load it via relative path. If we want to store the input somewhere else, we need to use the full path to the file:
+
+```q
+q)read0 `:/home/mark/kdb/q/input/01.txt / using the full path
+```
+
+However if you have characters like `-` in the file path, you will get errors:
+
+```q
+q)read0 `:/media/mark/4087-BFA7/git/aoc/2017/input/01.txt
+'/
+  [0]  read0 `:/media/mark/4087-BFA7/git/aoc/2017/input/01.txt
+```
+
+This is not a particularly helpful error message (Q did not like `/`), but ultimately it is because it considers the `-` in the path to be the [subtract](https://code.kx.com/q/ref/subtract/) operator, rather than being part of the file path...
+
+We therefore need to create the path as a *string*, and cast this to a *symbol* via `` `$ ``:
+
+```q
+q)`$ "/media/mark/4087-BFA7/git/aoc/2017/input/01.txt"
+`/media/mark/4087-BFA7/git/aoc/2017/input/01.txt
+q)`$ ":/media/mark/4087-BFA7/git/aoc/2017/input/01.txt"     / file paths should begin with :
+`:/media/mark/4087-BFA7/git/aoc/2017/input/01.txt
+q)hsym `$ "/media/mark/4087-BFA7/git/aoc/2017/input/01.txt" / hsym does this for us
+`:/media/mark/4087-BFA7/git/aoc/2017/input/01.txt
+```
+
+... which we can pass into `read0`:
+
+```q
+q)read0 `$ ":/media/mark/4087-BFA7/git/aoc/2017/input/01.txt"
+"8921959699917358379152738687295486942379674951154123993731945625269475853372..
+```
 
 ## Solving Part 2
 
@@ -304,12 +339,12 @@ q)count a
 8
 ```
 
-If we want to get half of the length of the list, we can either divide by `2`, or multiply by `0.5`:
+If we want to get half of the length of the list, we can either [divide](https://code.kx.com/q/ref/divide/) by `2`, or [multiply](https://code.kx.com/q/ref/multiply/) by `0.5`:
 
 ```q
-q)(count a)%2 / divide by two
+q)(count a) % 2 / divide by two
 4f
-q)0.5*count a / multiply by half
+q)0.5 * count a / multiply by half
 4f
 ```
 
@@ -341,7 +376,7 @@ q)div[7;3]   / 3 fits into 7 twice with a remainder of 1
 Let's `rotate` the example and use `div` to get half the length of the input:
 
 ```q
-q)a
+q)a                          / double-check a is still what we expect
 "12131415"
 q)((count a) div 2) rotate a / perhaps we can reduce the number of brakets?
 "14151213"
@@ -349,26 +384,46 @@ q)div[count a;2] rotate a    / sometimes it can be clearer to use [] over ()
 "14151213"
 ```
 
-Feeding this into our solution to **Part 1** gives us our second star:
+We then want to compare this to the original list, as per **Part 1** we will use the equals operator:
+
+```q
+q)a=div[count a;2] rotate a
+10101010b
+```
+
+This should look familiar to **Part 1**, we want to index back into `a` where true, and `sum` up the result:
+
+```q
+q)where a=div[count a;2] rotate a                  / indices that match
+0 2 4 6
+q)a where a=div[count a;2] rotate a                / index back into a
+"1111"
+q)value each a where a=div[count a;2] rotate a     / convert each to integer
+1 1 1 1
+q)sum value each a where a=div[count a;2] rotate a / sum up
+4
+```
+
+This is the right answer for the example, so let's feed our own input into this code to get our second star:
 
 ```q
 q)sum value each a where a=div[count a;2] rotate a:first read0 `:input/01.txt
 982
 ```
 
-### Bonus 2
+### Bonus 3
 
 Instead of taking the list, rotating it by half the length and comparing against the original list, we can instead split the list in two, compare the halves, and then multiply the sum by `2` (because we are only comparing half the list). The `#` ([take](https://code.kx.com/q/ref/take/)) operator is overloaded. When given a list of numbers as the left argument it acts as reshape:
 
 ```q
-q)til 6 / til n creates a range of 0 to n-1
+q)til 6     / til n creates a range of 0 to n-1
 0 1 2 3 4 5
-q)2 3#til 6 / creates a 2x3 grid
+q)2 3#til 6 / reshape creates a 2x3 grid
 0 1 2
 3 4 5
 ```
 
-If we pass the null long,`0N`, as one of the list item arguments to reshape we get the right argument split into either n rows or n columns:
+If we pass the null long,`0N`, as one of the list item arguments to reshape we get the right argument split into either n *rows* or n *columns*:
 
 ```q
 q)2 0N#til 10 / two rows
@@ -442,7 +497,7 @@ q)2*sum value each a where (=). 2 0N#a:first read0 `:input/01.txt
 982
 ```
 
->Both parts of this puzzle are complete! They provide two gold stars: **
+>Both parts of this puzzle are complete! They provide two gold stars: :star2::star2:
 
 ## Complete Solution To Day 1
 

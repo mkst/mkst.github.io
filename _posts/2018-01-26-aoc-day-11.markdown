@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 11"
+title:  ":christmas_tree: Advent of Code 2017, Day 11"
 date:   2018-01-26 08:00:00 +0000
 last_updated: 2018-01-26
 categories: aoc tutorial
@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/11.q
 
 # Day 11: Hex Ed
 
-A very witty title for [today's challenge](http://adventofcode.com/2017/day/11). It's all about hexagons, and navigating a grid of them. Hexagonal grids cannot easily be mapped to x-y coordinates, however there is a [fantastic resource](https://www.redblobgames.com/grids/hexagons/) all about hexagons by [Amit Patel](http://www-cs-students.stanford.edu/~amitp/).
+A very witty title for [today's challenge](https://adventofcode.com/2017/day/11). It's all about hexagons, and navigating a grid of them. Hexagonal grids cannot easily be mapped to x-y coordinates, however there is a [fantastic resource](https://www.redblobgames.com/grids/hexagons/) all about hexagons by [Amit Patel](http://www-cs-students.stanford.edu/~amitp/).
 
 In order to tackle today's challenge, we will lean heavily on the section named [Cube Coordinates](https://www.redblobgames.com/grids/hexagons/#neighbors-cube), so go read that now.
 
@@ -17,7 +17,7 @@ Our hexagons are arranged in a 'flat-topped' format, so be sure to switch the ex
 
 > The hexagons ("hexes") in this grid are aligned such that **adjacent hexes can be found to the north, northeast, southeast, south, southwest, and northwest**
 
-An ASCII representation of our flat-topped hexagon grid is provided on our puzzle text page.
+An ASCII representation of our flat-topped hexagon grid is provided on our challenge text page.
 
 ```
    \ n  /
@@ -85,7 +85,7 @@ a| 1
 b| 2
 c| 3
 d| 4
-q)d"ac" / we can index on multiple keys at the same time
+q)d"ac"   / we can index on multiple keys at the same time
 1 3
 q)show d:0 1 2 3!({x+1};{x+2};{x*3};{x-1}) / keys are longs, functions are the values!
 0| {x+1}
@@ -101,14 +101,14 @@ We will come across more complex dictionary mappings in later challenges. For no
 We can either do this step-by-step from an empty dictionary:
 
 ```q
-q)d:()!() / initialise an empty dictionary
+q)d:()!()        / initialise an empty dictionary
 q)d[`n]:0 1 -1
 q)d[`ne]:1 0 -1
 q)d[`se]:1 -1 0
 q)d[`s]:0 -1 1
 q)d[`sw]:-1 0 1
 q)d[`nw]:-1 1 0
-q)d       / check our dictionary look ok
+q)d              / check our dictionary look ok
 n | 0  1  -1
 ne| 1  0  -1
 se| 1  -1 0
@@ -170,7 +170,7 @@ q)max abs sum d`se`sw`se`sw`sw / se,sw,se,sw,sw is 3 steps away
 3
 ```
 
-Looks good. Now let's read in our [puzzle input](http://adventofcode.com/2017/day/11/input) and feed that into our dictionary.
+Looks good. Now let's read in our [puzzle input](https://adventofcode.com/2017/day/11/input) and feed that into our dictionary.
 
 ```q
 q)read0 `:input/11.txt
@@ -195,7 +195,7 @@ q)max abs sum d`$ "," vs first read0 `:input/11.txt
 
 >How many steps away is the **furthest he ever got** from his starting position?
 
-We cannot use `sum` as this gives us the result after all of the steps were taken. In the same way that `scan` is the sister function to `over` (printing out results of each step), [sums]() is the sister function to `sum` which will return each intermediate step:
+We cannot use `sum` as this gives us the result after **all** of the steps are taken. In the same way that `scan` is the sister function to `over` (printing out results of each step), [sums](https://code.kx.com/q/ref/sum/#sums) is the sister function to `sum` which will return each intermediate step:
 
 ```q
 q)sum til 10

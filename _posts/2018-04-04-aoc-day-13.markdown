@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 13"
+title:  ":christmas_tree: Advent of Code 2017, Day 13"
 date:   2018-04-04 08:00:00 +0000
 last_updated: 2018-04-05
 categories: aoc tutorial
@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/13.q
 
 # Day 13: Packet Scanners
 
-Take a look at today's [puzzle text](http://adventofcode.com/2017/day/13). The description is a little complicated on the first read through, but the diagrams help to clarify the challenge, and what you have to do in order to solve it.
+Take a look at today's [challenge text](https://adventofcode.com/2017/day/13). The description is a little complicated on the first read through, but the diagrams help to clarify the challenge, and what you have to do in order to solve it.
 
 > **If there is a scanner at the top of the layer as your packet enters it, you are caught**. (If a scanner moves into the top of its layer while you are there, you are not caught: it doesn't have time to notice you before you leave.) **The severity of getting caught on a layer is equal to its depth multiplied by its range**.
 
@@ -66,7 +66,9 @@ We can do this by figuring out how many steps it takes to take the scanner from 
 |   5    |   8   | 4 down, 4 up      |
 |   6    |   10  | ... etc.          |
 
-<br/>The formula to determine the steps is thus `2 * (n - 1)`. Armed with this we can fire up a `Q` console and get to work.
+<br/>
+
+The formula to determine the steps is `(2 * n) - 2` or `2 * (n - 1)`. Armed with this we can fire up a `Q` console and get to work.
 
 ## Solving Part 1
 
@@ -100,14 +102,14 @@ q)f
 3 2 0N 0N 4 0N 4
 ```
 
-We can then apply the `2 * (n - 1)` formula to this list which will give us the number of steps required for the scanner to be at the top of the firewall... Or if we rephrase this, by performing the modulo operation we can determine whether or not the scanner is at the top of the firewall for a given step.
+We can then apply the `2 * (n - 1)` formula to this list which will give us the number of steps required for the scanner to be at the top of the firewall... Or to rephrase this, by performing a modulo operation we can determine whether or not the scanner is at the top of the firewall for a given step.
 
 ```q
 q){2 * (x - 1)} f
 4 2 0N 0N 6 0N 6
 ```
 
-Save the result as g:
+Save the result as `g` (simply because 'g' comes after 'f' in the alphabet):
 
 ```q
 q)g:{2 * x - 1} f
@@ -115,7 +117,7 @@ q)g
 4 2 0N 0N 6 0N 6
 ```
 
-There are `8` layers to the example firewall, only `4` of them real. If we start at the left and step through each layer, the step number will increase by 1 for each step we take. This means that by the 7th layer we will be at step 6. Aligning the firewall steps against the steps we take as we go through the firewall we get the following:
+There are `7` layers to the example firewall, only `4` of them real. If we start at the left and step through each layer, the step number will increase by **1** for each step we take. This means that by the 7th layer we will be at step **6**. Aligning the firewall steps against the steps we take as we go through the firewall we get the following:
 
 ```q
 4  2 0N 0N  6 0N  6 / steps required until scanner in 1st layer
@@ -163,16 +165,18 @@ Multiplying `f[w]` by `w` gets us:
 ```q
 q)f[w]*w
 0 24
+q)w*f w / Q developers prefer to omit brackets when possible
+0 24
 ```
 
-and performing the sum operation on this give us an answer that matches the example solution:
+and performing the `sum` operation on this give us an answer that matches the example solution:
 
 ```q
-q)sum f[w]*w
+q)sum w*f w
 24
 ```
 
-Now we need to parse our [puzzle input](http://adventofcode.com/2017/day/13/input) and get our first star.
+Now we need to parse our [puzzle input](https://adventofcode.com/2017/day/13/input) and get our first star.
 
 ```q
 q)read0 `:input/13.txt
@@ -290,7 +294,7 @@ q)0=(til count g) mod g
 100000000010101000000000000000000000000000001000000010000000000000000000000000000000000000000000000b
 ```
 
-...extract indices where true
+...extract indices `where` true
 
 ```q
 q)where 0=(til count g) mod g
@@ -310,7 +314,7 @@ q)f[w]*w:where 0=(til count g) mod g
 0 60 48 112 528 728
 ```
 
-and finally sum to get today's first star!
+and finally `sum` to get today's first star!
 
 ```q
 q)sum f[w]*w:where 0=(til count g) mod g
@@ -319,10 +323,100 @@ q)sum f[w]*w:where 0=(til count g) mod g
 
 ## Solving Part 2
 
-*Coming soon...*
+Today is another lucky day, Topaz has been kind to us; we need to determine the lowest offset that will result in our packet making its way through the firewall - or to put it another way, we need to iterate until we find a delay that results in a severity of zero.
+
+Let's set `g` back to the example:
+
+```q
+q)f:3 2 0N 0N 4 0N 4
+q)f
+3 2 0N 0N 4 0N 4
+q)g:{2 * x - 1} f
+q)g
+4 2 0N 0N 6 0N 6
+```
+
+For **Part 1**, we were starting with a delay of 0. This had a non-zero severity.
+
+```q
+q)sum f[w]*w:where 0=(til count g) mod g
+24
+```
+
+We do not care what the severity is, we just care whether it is zero or not. This means we can simplify the statement:
+
+```q
+q)0=(til count g) mod g     / where zero matches the list
+1000001b
+q)any 0=(til count g) mod g / are there any matches?
+1b
+```
+
+In order to simulate a delay of 1 (picosecond), we can add 1 to the argument being `mod`'d:
+
+```q
+q)(1+til count g) mod g
+1 0 0N 0N 5 0N 1
+q)0=(1+til count g) mod g
+0100000b
+q)any 0=(1+til count g) mod g
+1b
+```
+
+To generalise this we can wrap everything in a lambda, and pass the 'delay' in:
+
+```q
+q){[delay] any 0=(delay+til count g) mod g } / explicit argument
+q){ any 0=(x+til count g) mod g }            / implicit argument
+```
+
+We can keep incrementing until the result is false (`0b`):
+
+```q
+q){ any 0=(x+til count g) mod g } 2
+1b
+q){ any 0=(x+til count g) mod g } 3
+1b
+q){ any 0=(x+til count g) mod g } 4
+1b
+..
+q){ any 0=(x+til count g) mod g } 9
+1b
+q){ any 0=(x+til count g) mod g } 10 / at delay 10, no scanners are in position 0
+0b
+```
+
+That was fairly tedious to do by hand, and judging by the size of our input, we better come up with a programmatic solution. We can use the overloaded `over` function to iterate until a condition is met: `{function}/[{condition};initial value]`
+
+An example of listing all numbers from 1 to 10 with `over` used in this way:
+
+```q
+q){ x + 1 }/[{x < 10};1]
+10
+q){ x + 1 }\[{x < 10};1]
+1 2 3 4 5 6 7 8 9 10
+```
+
+In the above example, we initialise `x` as `1` and the left function `{ x + 1 }` is called until the right function `{ x < 10 }` no longer yields 'true'.
+
+For our challenge, we don't want to check whether x is less than 10, we want to check whether `{any 0=(x+til count g) mod g}` is true, and keep going until it is false:
+
+```q
+q){ x + 1 }/[{ any 0=(x+til count g) mod g };1]
+10
+```
+
+The only thing left to do is to swap out `g` for our real input and collect our second star:
+
+```q
+q)f:@[(1 + last first i)#0N;first i;:;last i]   / reset f
+q)g:{2 * x - 1} f                               / reset g
+q){ x + 1 }/[{ any 0=(x+til count g) mod g };1] / this will take a few seconds
+3937334
+```
 
 ## Complete Solution To Day 13
 
-My full solution for **Day 13** is shown below:
+My full solution for **Day 13** is shown below. The only change over what has been written in this post is that rather than incrementing by 1, I am starting at zero incrementing by 2 - this is because my input has a scanner of size 2, which means it will always be at position 0 when the delay is an odd number - so there is no point checking them - this also makes the solution run in half the time!
 
 <pre class="q" id='solution'></pre>

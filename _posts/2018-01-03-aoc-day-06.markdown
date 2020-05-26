@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 06"
+title:  ":christmas_tree: Advent of Code 2017, Day 06"
 date:   2018-01-03 08:00:00 +0000
 last_updated: 2018-01-06
 categories: aoc tutorial
@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/06.q
 
 # Day 6: Memory Reallocation
 
-There's a fair bit to read in today's [challenge text](http://adventofcode.com/2017/day/6). I've pulled out the key paragraph and emphasised the highlights.
+There's a fair bit to read in today's [challenge text](https://adventofcode.com/2017/day/6). I've pulled out the key paragraph and emphasised the highlights.
 
 > The reallocation routine operates in cycles. In each cycle, it **finds the memory bank with the most blocks** (ties won by the lowest-numbered memory bank) and redistributes those blocks among the banks. To do this, it **removes all of the blocks from the selected bank, then moves to the next (by index) memory bank and inserts one of the blocks**. It continues doing this until it runs out of blocks; **if it reaches the last memory bank, it wraps around to the first one**.
 
@@ -208,7 +208,7 @@ In order to check whether our state has been seen before, we need to keep track 
 
 ```q
 q)r:0 2 7 0
-q)s:enlist r / enlist to create a list
+q)s:enlist r / enlist to create a list containing r
 ```
 
 We then want to update `r` as `solve r`, and check whether this is already present in `s`. If it's already present we want to exit the loop... or flipped around we want to keep looping while `solve r` is `not` in `s`.
@@ -251,7 +251,7 @@ q)s
 
 And if we `count s` we will see it contains 5 states, which is the answer to the example input.
 
-Now let's move on to our [puzzle input](http://adventofcode.com/2017/day/6/input) for today.
+Now let's move on to our [puzzle input](https://adventofcode.com/2017/day/6/input) for today.
 
 ```q
 q)read0 `:input/06.txt

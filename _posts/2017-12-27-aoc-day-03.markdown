@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 03"
+title:  ":christmas_tree: Advent of Code 2017, Day 03"
 date:   2017-12-27 08:00:00 +0000
 last_updated: 2018-01-06
 categories: aoc tutorial
@@ -9,9 +9,13 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/03.q
 
 # Day 3: Spiral Memory
 
-**Note:** **Day 3** is a significant step-up in complexity compared to the Days **1** and **2** (and **4**, **5** and **6** for that matter). You may want to come back to this one once you've gotten a few more stars under your belt.
+## :warning: Warning :warning:
 
-Take a read through the [challenge text](http://adventofcode.com/2017/day/3) for **Day 3**, the crux of the challenge is quoted below (emphasis added).
+**Day 3** is a significant step-up in complexity compared to the Days **1** and **2** (and **4**, **5** and **6** for that matter). You may want to come back to this one once you've gotten a few more stars under your belt.
+
+## I'm feeling brave...
+
+Take a read through the [challenge text](https://adventofcode.com/2017/day/3) for **Day 3**, the crux of the challenge is quoted below (emphasis added).
 
 > Each square on the grid is allocated in a spiral pattern starting at a location marked 1 and then **counting up while spiraling outward**.
 
@@ -29,7 +33,7 @@ As we know that we are on the edge of the spiral, the distance to the centre wil
 43  44  45  46  47  48  <b>49</b>
 </pre>
 
-Taking some examples, if our input was `28`, we would need to go left `3` to get back to the centre, but if we were at `29` we would need to go left `3` and down `1` for a total of `4`.
+Taking some examples, if our input was `28`, we would need to go left `3` to get back to the centre (`1`), and if we started at `29` we would need to go left `3` and down `1` for a total of `4`.
 
 If we look at the numbers in the bottom right of each ring of the spiral (the **bold** ones) they seem to follow a pattern, `1, 9, 25, 49 ...`. This is the "Odd Squares" sequence, and is known as [A016754](https://oeis.org/A016754) on the [Online Encyclopedia of Integer Sequences](https://oeis.org/).
 
@@ -60,8 +64,8 @@ q)A016754:{ (1+2*x)*(1+2*x) }
 q)A016754:{ x*x:1+2*x } / minor optimisation
 q)A016754 3
 49
-q)A016754 0 1 2 3 5
-1 9 25 49 121
+q)A016754 0 1 2 3 4 5
+1 9 25 49 81 121
 ```
 
 Now we need to build a function that will return us the closest 'n' for a given result. To do that we can iterate from `x` equal to `0` until `A016754 x` exceeds the input. To do this we will leverage the [converge](https://code.kx.com/q/ref/accumulators/#converge) pattern:
@@ -306,12 +310,12 @@ q)g[l]:sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1)
 
 ```q
 $[(d:"b"$0^g l +/:(0 1;1 0;0 -1;-1 0)) in (0001b;0011b);
-  move north;
+  / move north;
   d in (0010b;0110b);
-  move west;
+  /  move west;
   d in (0100b;1100b);
-  move south;
-  else move east
+  / move south;
+  / else move east
   ]
 ```
 
@@ -350,16 +354,16 @@ while[368078<sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
 
 ```q
 while[368078<sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
- g[l]:sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
- $[(d:"b"$0^g l +/:(0 1;1 0;0 -1;-1 0)) in (0001b;0011b);
-   l+:0 1; / move north
-   d in (0010b;0110b);
-   l+:-1 0 / move west
-   d in (0100b;1100b);
-   l+:0 -1; / move south
-   l+:1 0 / move east
-   ]
- ]
+  g[l]:sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
+  $[(d:"b"$0^g l +/:(0 1;1 0;0 -1;-1 0)) in (0001b;0011b);
+    l+:0 1; / move north
+    d in (0010b;0110b);
+    l+:-1 0 / move west
+    d in (0100b;1100b);
+    l+:0 -1; / move south
+    l+:1 0 / move east
+    ]
+  ]
 ```
 
 Once the `while` loop terminates our answer can be found by calculating the `sum` of the neighbours:
@@ -379,32 +383,32 @@ First, let's store the `sum` as variable `s` during the `while` clause:
 
 ```q
 while[368078<s:sum (g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
- g[l]:s;
- $[(d:"b"$0^g l +/:(0 1;1 0;0 -1;-1 0)) in (0001b;0011b);
-   l+:0 1; / move north
-   d in (0010b;0110b);
-   l+:-1 0 / move west
-   d in (0100b;1100b);
-   l+:0 -1; / move south
-   l+:1 0 / move east
-   ]
- ]
+  g[l]:s;
+  $[(d:"b"$0^g l +/:(0 1;1 0;0 -1;-1 0)) in (0001b;0011b);
+    l+:0 1; / move north
+    d in (0010b;0110b);
+    l+:-1 0 / move west
+    d in (0100b;1100b);
+    l+:0 -1; / move south
+    l+:1 0 / move east
+    ]
+  ]
 ```
 
 Then let's save the values of the north, east, south, west neighbours as `n` and use that in the switch:
 
 ```q
 while[368078<s:sum (n:g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1);
- g[l]:s;
- $[(d:"b"$0^n) in (0001b;0011b);
-   l+:0 1; / move north
-   d in (0010b;0110b);
-   l+:-1 0 / move west
-   d in (0100b;1100b);
-   l+:0 -1; / move south
-   l+:1 0 / move east
-   ]
- ]
+  g[l]:s;
+  $[(d:"b"$0^n) in (0001b;0011b);
+    l+:0 1; / move north
+    d in (0010b;0110b);
+    l+:-1 0 / move west
+    d in (0100b;1100b);
+    l+:0 -1; / move south
+    l+:1 0 / move east
+    ]
+  ]
 ```
 
 In fact, we don't even need the intermediate variable `s`, we can assign `g[l]` as part of the `while` condition:
@@ -422,7 +426,7 @@ while[368078>g[l]:sum (n:g l +/:(0 1;1 0;0 -1;-1 0)),g l+/:(1 1;1 -1;-1 -1;-1 1)
   ];
 ```
 
-And the answer to **Part 2** is now simply the value of the current location `g l`.
+And the answer to **Part 2** is now simply the value of the current location, `g l`.
 
 ## Complete Solution To Day 3
 

@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 09"
+title:  ":christmas_tree: Advent of Code 2017, Day 09"
 date:   2018-01-16 08:00:00 +0000
 last_updated: 2018-01-16
 categories: aoc tutorial
@@ -9,7 +9,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/09.q
 
 # Day 9: Stream Processing
 
-Today's challenge looks like a dream for anyone who loves [regex](https://en.wikipedia.org/wiki/Regular_expression). *Unfortunately* Q doesn't support regex out of the box (and I'm not planning on writing any [C code](https://code.kx.com/q/kb/regex/#regex-libraries) today), so we'll have to solve things a different way. Let's begin by reading today's [challenge text](http://adventofcode.com/2017/day/9).
+Today's challenge looks like a dream for anyone who loves [regex](https://en.wikipedia.org/wiki/Regular_expression). *Unfortunately* Q doesn't support regex out of the box (and I'm not planning on writing any [C code](https://code.kx.com/q/kb/regex/#regex-libraries) today), so we'll have to solve things a different way. Let's begin by reading today's [challenge text](https://adventofcode.com/2017/day/9).
 
 >**Garbage begins with < and ends with >**. Between those angle brackets, almost any character can appear, including { and }... Your goal is to **find the total score for all groups in your input**. Each group is assigned a score which is one more than the score of the group that immediately contains it... some program has cancelled some of the characters within it using !: inside garbage, **any character that comes after ! should be ignored**, including <, >, and even another !.
 
@@ -76,7 +76,7 @@ If we rewrite this in Q, line-for-line we will get
   if[x="<";         / if the input character is "<"
     garbage::1b;    / set the global garbage flag to true
     :""];           / return the empty string
- / note: we dont need an else here either as we would already have returned if input char was "<"
+  / note: we don't need an else here either as we would already have returned if input char was "<"
   x                 / return the input character
   }
 ```
@@ -222,7 +222,7 @@ q)sum { cg each raze rg each ssr[x;"!?";""] } "{{<a!>},{<a!>},{<a!>},{<ab>}}"
 3 {% endraw %}
 ```
 
-Now to feed in today's [puzzle input](http://adventofcode.com/2017/day/9/input). No fancy processing is required, simply take the `first` result of `read0`, and the first star is ours!
+Now to feed in today's [puzzle input](https://adventofcode.com/2017/day/9/input). No fancy processing is required, simply take the `first` result of `read0`, and the first star is ours!
 
 ```q
 q)sum { cg each raze rg each ssr[x;"!?";""] } first read0 `:input/09.txt

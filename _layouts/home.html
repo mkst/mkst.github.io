@@ -6,26 +6,26 @@ layout: default
 
   {{ content }}
 
-  {% if site.posts.size > 0 %}
-  {% assign one_week_ago = "now" | date : "%s" | minus: 604800 | date : "%s" %}
-  {% assign date_format = site.minima.date_format | default: "%b %-d, %Y" %}
+  {%- if site.posts.size > 0 -%}
+  {%- assign one_week_ago = "now" | date : "%s" | minus: 604800 | date : "%s" -%}
+  {%- assign date_format = site.minima.date_format | default: "%b %-d, %Y" -%}
   <h2 class="post-list-heading">{{ page.list_title | default: "Posts" }}</h2>
     <ul class="post-list">
-      {% for post in site.posts reversed %}
+      {%- for post in site.posts reversed -%}
         <li>
           <span class="post-meta">{{ post.date | date: date_format }}</span>
           <h3>
             <a class="post-link" href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
-            {% assign last_updated = post.last_updated | date:"%s" %}
-            {% if last_updated > one_week_ago %}
+            {%- assign last_updated = post.last_updated | date:"%s" -%}
+            {%- if last_updated > one_week_ago -%}
             **UPDATED**
-            {% endif %}
+            {%- endif -%}
           </h3>
         </li>
-      {% endfor %}
+      {%- endfor -%}
     </ul>
 
     <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | relative_url }}">via RSS</a></p>
-  {% endif %}
+  {%- endif -%}
 
 </div>

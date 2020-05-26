@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Advent of Code 2017, Day 14"
+title:  ":christmas_tree: Advent of Code 2017, Day 14"
 date:   2020-05-21 08:00:00 +0000
 last_updated: 2020-05-21
 categories: aoc tutorial
@@ -11,7 +11,7 @@ onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/14.q
 
 Today's challenge builds off the work from [Day 10]({{ site.baseurl }}{% post_url 2018-01-17-aoc-day-10 %}){: .internal-link }, so if you haven't completed that yet - get cracking, and then come back once you are able to calculate a "knot hash".
 
-Today's puzzle text packs quite a lot of detail, I've tried to extract the key sentences:
+Today's [challenge text](https://adventofcode.com/2017/day/14) packs quite a lot of detail, I've tried to extract the key sentences:
 
 > The disk in question consists of a 128x128 grid; each square of the grid is either free or used. On this disk, **the state of the grid is tracked by the bits in a sequence of knot hashes**.
 > A total of **128 knot hashes are calculated**, each corresponding to a single row in the grid; **each hash contains 128 bits which correspond to individual grid squares**. Each bit of a hash indicates whether that square is free (0) or used (1).
@@ -21,13 +21,13 @@ So, we need to calculate a **hash** and convert it to binary 128 times. Let's be
 
 ## Solving Part 1
 
-A "knot hash" was the function we created to get the second star on Day 10:
+A "knot hash" was the function we created to get the second star on [Day 10]({{ site.baseurl }}{% post_url 2018-01-17-aoc-day-10 %}){: .internal-link }:
 
 ```q
 raze string "x"$(xor over) each 16 cut knot[til 256;raze 64#enlist ("j"$first read0 `:input/10.txt),17 31 73 47 23]
 ```
 
-We need to generalise this so we can call it with any input ("sequence of lengths" in AOC speak). To do so we can replace the variable part of the function with a variable, lets call it `lengths`, and wrap it in a function:
+We need to generalise this so we can call it with any input ("sequence of lengths" in AoC speak). To do so we can replace the variable part of the function with a variable, lets call it `lengths`, and wrap it in a function:
 
 ```q
 {[lengths] raze string "x"$(xor over) each 16 cut knot[til 256;raze 64#enlist ("j"$lengths),17 31 73 47 23] }
@@ -60,7 +60,7 @@ q)hash "flqrgnkx-0"
 0xd4f76bdcbf838f8416ccfa8bc6d1f9e6
 ```
 
-We then want to convert to binary. As we leant from Day 10 we can use `0b vs`:
+We then want to convert to binary. As we leant from [Day 10]({{ site.baseurl }}{% post_url 2018-01-17-aoc-day-10 %}){: .internal-link } we can use `0b vs`:
 
 ```q
 q)0b vs 0xd4 / d => 1101, 4 => 0100
@@ -105,7 +105,7 @@ q)til 128
 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 ..
 ```
 
-We need to join (`,`) the key, `"flqrgnkx-"` with each-right number, similar to what we did on Day 8 with our registers.
+We need to join (`,`) the key, `"flqrgnkx-"` with each-right number, similar to what we did on [Day 8]({{ site.baseurl }}{% post_url 2018-01-13-aoc-day-08 %}){: .internal-link } with our registers.
 
 ```q
 q)"flqrgnkx-",/:til 128
@@ -162,7 +162,7 @@ q)sum raze {raze 0b vs'x} each hash each "flqrgnkx-",/:string til 128
 8108i
 ```
 
-Now we just need to replace the example key with our puzzle input, append the dash, and get today's first star. First lets read in the puzzle input and grab the first line:
+Now we just need to replace the example key with our [puzzle input](https://adventofcode.com/2017/day/14/input), append the dash, and get today's first star. First lets read in the puzzle input and grab the first line:
 
 ```q
 q)read0 `:input/14.txt             / looks like what we want
@@ -216,7 +216,11 @@ q)sum raze {raze 0b vs'x} each hash each (first[read0 `:input/14.txt],","),/:str
 
 ## Solving Part 2
 
-*Coming soon...*
+> Now, all the defragmenter needs to know is the number of regions. **A region is a group of used squares that are all adjacent**, not including diagonals. Every used square is in exactly one region: lone used squares form their own isolated regions, while several **adjacent squares all count as a single region**.
+
+**Part 2** ups the ante. We need to determine the region of each 'bit' in the set of 128 hashes. There are a few different ways to approach this. The way I solved it was to iterate over every bit in the grid, recursively visiting all adjacent bits - recording them as being part of the current region.
+
+*Full breakdown coming soon...*
 
 ## Complete Solution To Day 14
 
