@@ -1,13 +1,13 @@
 ---
 layout: post
-title:  ":christmas_tree: Advent of Code 2017, Day 04"
+title:  ":christmas_tree: Advent of Code 2017, Day 04: High-Entropy Passphrases"
 date:   2017-12-27 08:00:00 +0000
 last_updated: 2018-01-06
 categories: aoc tutorial
 onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/04.q', 'solution')
 ---
 
-# Day 4 High-Entropy Passphrases
+# Day 4: High-Entropy Passphrases
 
 You should know the format by now... Read through today's [challenge text](https://adventofcode.com/2017/day/4). I've quoted the crux of the challenge below and highlighted the key words.
 

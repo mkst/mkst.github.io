@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  ":christmas_tree: Advent of Code 2017, Day 11"
+title:  ":christmas_tree: Advent of Code 2017, Day 11: Hex Ed"
 date:   2018-01-26 08:00:00 +0000
 last_updated: 2018-01-26
 categories: aoc tutorial

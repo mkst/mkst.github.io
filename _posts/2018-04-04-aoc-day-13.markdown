@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  ":christmas_tree: Advent of Code 2017, Day 13"
+title:  ":christmas_tree: Advent of Code 2017, Day 13: Packet Scanners"
 date:   2018-04-04 08:00:00 +0000
 last_updated: 2018-04-05
 categories: aoc tutorial

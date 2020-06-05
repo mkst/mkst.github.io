@@ -1,0 +1,465 @@
+---
+layout: post
+title:  ":christmas_tree: Advent of Code 2017, Day 16: Permutation Promenade"
+date:   2020-06-05 08:00:00 +0000
+last_updated: 2020-05-23
+categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/16.q', 'solution')
+---
+
+# Day 16: Permutation Promenade
+
+Today's challenge is a good one. **Part 1** has a goldilocks level of complexity - not too hard, not too easy, and **Part 2** requires us to think a little outside the box. A snippet of the [challenge text](https://adventofcode.com/2017/day/16) is shown below with the key parts highlighted.
+
+> There are **sixteen programs in total**, named **a through p**. They start by standing in a line: **a stands in position 0**, b stands in position 1, and so on until **p, which stands in position 15**.
+> The programs' dance consists of a sequence of dance moves:
+> - Spin, written **sX**, makes X programs **move from the end to the front**, but maintain their order otherwise. (For example, s3 on abcde produces cdeab).
+> - Exchange, written **xA/B**, makes the programs at **positions A and B swap places**.
+> - Partner, written **pA/B**, makes the programs **named A and B swap places**.
+
+So, it looks like we need to create 3 different functions, and, based upon the instructions in the [puzzle input](https://adventofcode.com/2017/day/16/input), apply them one-by-one to a string that starts life as `"abcdefghijklmnop"`.
+
+## Solving Part 1
+
+Let's start by tackling the "Spin" move. The examples are:
+
+ - `s3` will turn `"abcde"` into `"cdeab"`
+ - `s1` will turn `"abcde"` into `"eabcd"`
+
+The spin is effectively treating the list as a circle, and rotating it *right* 'X' number of steps. We saw back on [Day 1]({{ site.baseurl }}{% post_url 2017-12-26-aoc-day-01 %}){: .internal-link } that Q has a [rotate](https://code.kx.com/q/ref/rotate/) operator that will rotate a list *left* given a positive number, and *right* given a negative number:
+
+```q
+q)1 rotate "abcde"
+"bcdea"
+q)-1 rotate "abcde" / this is 's1' against "abcde"
+"eabcd"
+q)3 rotate "abcde"
+"deabc"
+q)-3 rotate "abcde" / this is 's3' against "abcde"
+"cdeab"
+```
+
+So, we can create a `spin` function that takes a positive number `X` and the string of `programs` to *spin*, and rotates that string 'negative X' times.
+
+In pseudocode:
+
+```
+spin:{[X;programs]
+  (negative X) rotate programs
+  }
+```
+
+So, how do we turn a positive number negative? Well, we could subtract it from `0`:
+
+```q
+q)0 - 3
+-3
+```
+
+...but there is a Q operator, [neg](https://code.kx.com/q/ref/neg/) that does precisely this:
+
+```q
+q)neg 3
+-3
+q)(neg 3) rotate "abcde" / be aware of left-of-right evaluation
+"cdeab"
+q)neg[3] rotate "abcde"  / using square brackets
+"cdeab"
+q)neg 3 rotate "abcde"   / negative ascii values, we don't want this!
+-100 -101 -97 -98 -99i
+```
+
+Therefore, we can complete our `spin` function:
+
+```q
+q)spin:{[X;programs] neg[X] rotate programs} / define our function
+q)spin[3;"abcde"]                            / check that it works
+"cdeab"
+```
+
+As there are only 2 arguments to our function, we can act like a Q-god and remove them and use `x` and `y` instead:
+
+```q
+q)spin:{ neg[x] rotate y }
+q)spin[3;"abcde"]
+"cdeab"
+q)spin[1;"abcde"]
+"eabcd"
+```
+
+1 down, 2 to go. Now for the "Exchange" function. This *swaps* programs at given indices. The example we are given is that `x3/4` turns `"eabcd"` into `"eabdc"`.
+
+The programs at positions `3` and `4` in the list `"eabcd"` can be found by simply indexing in at `3` and `4`:
+
+```q
+q)"eabcd" 3 4
+"cd"
+```
+
+On [Day 6]({{ site.baseurl }}{% post_url 2018-01-03-aoc-day-06 %}){: .internal-link }, we used the [amend](https://code.kx.com/q/ref/amend/) operator to apply the [add](https://code.kx.com/q/ref/add/) operator to a list at given indices. We will use the `amend` function today to swap the programs around.
+
+We can directly modify values at given indices using square bracket notation, for example, changing `"car"` to `"cat"` to `"bat"`:
+
+```q
+q)a:"car"   / define 'a' as "car"
+q)a         / sanity check
+"car"
+q)a[2]:"t"  / set 2nd index to "t"
+q)a         / sanity check
+"cat"
+q)a[0]:"b"  / set 0th index to "b"
+q)a         / sanity check
+"bat"
+```
+
+We can expand upon this functionality via `amend`.  
+
+```q
+q)a:"car"       / define 'a' as "car"
+q)@[a;2;:;"t"]  / apply (@) assignment (:) of "t" to a at index 2
+"cat"
+q)a             / a is unmodified
+"car"
+```
+
+Note that this will not update the value of `a` unless we either explicitly assign the result back into `a` (via `a: ...`) or use `` `a ``.
+
+```q
+q)a:"car"
+q)a:@[a;2;:;"t"] / assign result back into a
+q)a              / sanity check
+"cat"
+q)@[`a;0;:;"b"]  / assign result back into a (only work for global variables)
+`a
+q)a              / sanity check
+"bat"
+```
+
+Now onto the "Exchange" function. We want to swap the programs at the indices `X` and `Y`, if we write out the example using `amend` we will have:
+
+```q
+q)@["eabcd";3 4;:;"dc"] / syntax is @[variable;indices;operator;arguments]
+"eabdc"
+```
+
+We saw earlier that `"cd"` is the result of indexing into `"eabcd"` at `3 4`, but we want `"dc"` - i.e. the reverse of the result (*or* the result of indexing at `4 3`):
+
+```q
+q)@["eabcd";3 4;:;"eabcd" 4 3]
+"eabdc"
+q)@["eabcd";3 4;:;"eabcd" reverse 3 4]
+"eabdc"
+q)@["eabcd";3 4;:;reverse "eabcd" 3 4]
+"eabdc"
+```
+
+We're now in a position to wrap this up into a new function, `exchange`, we want to replace the `3` and `4` with `X` and `Y` and `"eabcd"` with our list of `programs`.
+
+Note that we cannot simply replace `3` and `4` with `X` and `Y`, as Q does not know that they are meant to be a list, instead we need to use brackets and a semicolon to create a 2-item list. We could have done this explicitly for `3` and `4` but it was not necessary:
+
+```q
+q)@["eabcd";(3;4);:;reverse "eabcd" (3;4)] / using 'reverse'
+"eabdc"
+q)@["eabcd";(3;4);:;"eabcd" (4;3)]         / reversing indices ourselves
+"eabdc"
+```
+
+Our `exchange` function should look something like this:
+
+```q
+exchange:{[X;Y;programs] @[programs;(X;Y);:;reverse programs (X;Y)]} / using reverse
+exchange:{[X;Y;programs] @[programs;(X;Y);:;programs (Y;X)]}         / explicitly reversing when indexing
+exchange:{@[z;(x;y);:;z (y;x)]}                                      / replacing implicit argument names
+exchange:{@[z;x,y;:;z y,x]}                                          / Q-god mode!
+```
+
+Let's try it out:
+
+```q
+q)exchange[3;4;"eabcd"]
+"eabdc"
+```
+
+Not so bad right? That just leaves the "Partner" function. This behaves similarly to "Exchange" except that instead of indices, we are given the names of the programs that need to be switched. That sounds simple enough. We are given one example:
+
+- `pe/b` turns `"eabdc"` into `"baedc"`
+
+We know how to switch indices (our function `exchange` does that), so we just need to work out how to find the indices to be swapped. As if by magic, Q has a built-in for this, the [find](https://code.kx.com/q/ref/find/) operator, the hugely-overloaded `?` symbol. It takes two arguments, the *left* argument is the list being searched and the *right* argument is the item we are trying to find in that list.
+
+```q
+q)"hello"?"e"
+1
+q)"hello"?"o"
+4
+```
+
+Find will stop as soon as it reaches the first result (left-to-right scanning):
+
+```q
+q)"hello"?"l" / first occurrence of 'l' is at index 2
+2
+```
+
+.. and will return the *length* of the list if the lookup item was not found:
+
+```q
+q)"hello"?"g" / there are no 'g' characters in 'hello'
+5
+```
+
+Looking at the example:
+
+```q
+q)"eabdc"?"e"
+0
+q)"eabdc"?"b"
+2
+```
+
+If we feed this into our `exchange` function, we get the expected result of performing the "Partner" move:
+
+```q
+q)exchange["eabdc"?"e";"eabdc"?"b";"eabdc"]
+"baedc"
+```
+
+If you're anything like me, you'll be looking to [avoid duplicating work ](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself), so what we want to do is lookup the indices for the `X` and `Y` and then feed them into the `exchange` function:
+
+```q
+q)partner:{[X;Y;programs] exchange[programs?X;programs?Y;programs] }
+q)partner["e";"b";"eabdc"]
+"baedc
+```
+
+As before, we can remove the explicit arguments and we are left with:
+
+```q
+q)partner:{exchange[z?x;z?y;z]} / the Q-gods would be proud...
+q)partner["e";"b";"eabdc"]      / sanity check
+"baedc"
+```
+
+The majority of the heavy-lifting is now complete for **Part 1**, but we still need to read in our input, and perform the appropriate 'dance' function.
+
+If we look at the input, the first character determines the move, `"s"` for `spin`, `"x"` for `exchange` and `"p"` for `partner`. We can therefore create an if-else statement, in pseudocode:
+
+```
+dance:{[programs;input]
+  if input starts with "s"
+    spin with input
+  else if input starts with "x"
+    exchange with input
+  else
+    partner with input
+  }
+```
+
+Translating that into something a bit more Q-like gives us:
+
+```q
+dance:{[programs;input]
+  $["s"=first input;            / if input starts with "s"
+    spin[;programs] input;      / spin with input
+    "x"=first input;            / else if input starts with "x"
+    exchange[;;programs] input; / exchange with input
+    partner[;;programs] input   / (else) partner with input
+    ]
+  }
+```
+
+However, we also need to perform some manipulation of the input data.
+
+If we have input of `"s3"` we need to extract the `3` to feed into the `spin` function:
+
+```q
+q)1 _ "s3"     / drop the first character
+,"3"
+q)"J"$1 _ "s3" / use big-J casting
+3
+```
+
+If we get `"x3/4"` we need to extract the `3` and `4` and feed them to the `exchange` function:
+
+```q
+q)1 _ "x3/4"            / drop the first character
+"3/4"
+q)"/" vs 1 _ "x3/4"     / use 'vs' to split on '/'
+,"3"
+,"4"
+q)"J"$"/" vs 1 _ "x3/4" / use big-J casting
+3 4
+```
+
+If we get `"pe/b"` we need to extract the `"e"` and `"b"` and feed them to the `partner` function:
+
+```q
+q)1 _ "pe/b"
+"e/b"
+q)"/" vs 1 _ "pe/b"
+,"e"
+,"b"
+```
+
+We now have enough to complete our `dance` program. Note that the inputs for `exchange` and `partner` are 2-item lists. We've seen on previous days that we can use the `.` operator to treat a list as multiple arguments:
+
+```q
+q){ x + y } . 3 4            / treats 3 as x and 4 as y, 3 + 4 = 7
+7
+q)exchange[;;"eabcd"] . 3 4
+"eabdc"
+```
+
+Plugging in the input manipulation code gives us a complete `dance` function:
+
+```q
+dance:{[programs;input]
+  $["s"=first input;
+    spin[;programs] "J"$1 _ input;
+    "x"=first input;
+    exchange[;;programs] . "J"$"/" vs 1 _ input;
+    partner[;;programs] . "/" vs 1 _ input
+    ]
+  }
+```
+
+Let's take a look at today's puzzle input:
+
+```q
+q)read0 `:input/16.txt
+"x15/1,s15,x2/3,s15,x11/1,pm/a,x6/0,s4,x8/7,s4,x12/9,pi/l,x10/2,s1,x8/15,s7,x13/3,s10,x10/8,pk/e,x4/9,po/j,x8/15,pd/c,x6/4,s15,x2/7,s15,x4/13,pk/o,x0/3,s5,x1/14,s2,x5/10,s8,x2/7,s14,x0/13,s1,x7/9,pa/l,x3/0,pp/o,x13/14,pa/m,x9/5,s11,x6/14,pf/p,x9/5,s6,x1/7,s13,x4/14,pb/k,x2/3,pg/o,x11/7,s15,x5/2,pp/i,x6/14,s11,x15/4,s8,po/d,x6/7,pb/l,x2/8,..
+```
+
+.. nothing particularly new or novel here, we can take the `first` of the input and use `vs` to split on commas:
+
+```q
+q)"," vs first read0 `:input/16.txt
+"x15/1"
+"s15"
+"x2/3"
+"s15"
+"x11/1"
+"pm/a"
+"x6/0"
+"s4"
+"x8/7"
+"s4"
+..
+```
+
+We can create our list of 16 programs by taking 16 characters from the built-in alphabet, `.Q.a`
+
+```q
+q)16#.Q.a
+"abcdefghijklmnop"
+```
+
+We need to iterate over the input, feeding the result of the previous 'dance move' into the next. We encountered the [over](https://code.kx.com/q/ref/over/) operator on [Day 10]({{ site.baseurl }}{% post_url 2018-01-17-aoc-day-10 %}){: .internal-link } that will do precisely this.
+
+Combining our `dance` function, the first 16 letters of the alphabet, our input and the `over` operator will get us today's first star:
+
+```q
+q)dance/[16#.Q.a;"," vs first read0 `:input/16.txt]             / my preferred syntax
+"ceijbfoamgkdnlph"
+q)dance over (enlist 16#.Q.a),"," vs first read0 `:input/16.txt / more Q-like syntax
+"ceijbfoamgkdnlph"
+```
+
+## Solving Part 2
+
+With the first star under your belt, it's time to look at the second part of today's challenge:
+
+> Now that you're starting to get a feel for the dance moves, you turn your attention to the dance as a whole.
+> **Keeping the positions they ended up in from their previous dance**, the programs **perform it again and again**: including the first dance, a total of **one billion (1000000000) times**.
+
+Hmm. 1 BILLION. How long did it take to run **Part 1**? Let's check:
+
+```q
+q)\t dance/[16#.Q.a;"," vs first read0 `:input/16.txt]
+14
+```
+
+14 milliseconds on my laptop for 1 iteration. How long is 14 *BILLION* milliseconds? Well, there are 1000 milliseconds in a second, and 86400 seconds in a day...
+
+```q
+q)%[;86400*1000] 14 * 1000000000
+162.037
+```
+
+Oof! Almost half a year. So running our `dance` function a billion times is definitely not the way to get our second star... even if we managed to optimise our code to run 1000x faster it would still take 4 hours!
+
+Let's run our `dance` function `100` times and see if any pattern emerges. We can wrap our `dance` function in another lambda and will use the `scan` (`\`) operator to return each intermediate result:
+
+```q
+q){ dance/[x;"," vs first read0 `:input/16.txt] }\[100;16#.Q.a]
+"abcdefghijklmnop"
+"ceijbfoamgkdnlph"
+"cloeidmbjgpfhkna"
+"kgobdmhipafljcne"
+"jogpmkhfacdnblie"
+"glpdcjnfikahbeom"
+..
+```
+
+A little hard to see with the naked eye, lets save this result as `r` and take a closer look (some of you may already have spotted something interesting).
+
+```q
+q)r:{ dance/[x;"," vs first read0 `:input/16.txt] }\[100;16#.Q.a]
+q)count r          / 100 iterations + the original input for a total of 101 dances
+101
+q)count distinct r / unique set of dances
+60
+```
+
+Huh? There are only `60` distinct values? Note that you may have a slightly different result for your input.
+
+```q
+q)first r
+"abcdefghijklmnop"
+q)first[r]~/:r        / can we find "abcdefghijklmnop" in the results?
+10000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000b
+q)where first[r]~/:r  / indexes where r is equal to "abcdefghijklmnop"
+0 60
+```
+
+If `"abcdefghijklmnop"` appears again in the results, this must mean that the dance repeats itself - and it does, after `60` iterations!
+
+That means that we do not have to do 1 billion iterations, we only need to perform `1000000000 mod 60` iterations:
+
+```q
+q){ dance/[x;"," vs first read0 `:input/16.txt] }/[1000000000 mod 60;16#.Q.a]
+"pnhajoekigcbflmd"
+q)1000000000 mod 60
+40
+q)r 40 / alternatively it's the result at index 40 of r
+"pnhajoekigcbflmd"
+```
+
+The second star is ours and the challenge is complete!
+
+### Bonus 1
+
+Because the dance repeats itself, we can use the converge functionality of the `scan` operator to iterate until the result is the first item:
+
+```q
+q)r:{ dance/[x;"," vs first read0 `:input/16.txt] }\[16#.Q.a]
+q)count r
+60
+q)r 1000000000 mod count r
+"pnhajoekigcbflmd"
+```
+
+We can therefore get the answers for **Part 1** and **Part 2** with this code:
+
+```q
+q)r:{ dance/[x;"," vs first read0 `:input/16.txt] }\[16#.Q.a]
+q)r 1                      / result after 1 dance
+"ceijbfoamgkdnlph"
+q)r 1000000000 mod count r / result after 1 billion dances
+"pnhajoekigcbflmd"
+```
+
+## Complete Solution To Day 16
+
+My solution for **Day 16** is below. Rather than `dance`-ing over the input, I construct [projections](https://code.kx.com/q4m3/6_Functions/#64-projection) of what the input would do to the 'programs' list and run them against the input - this makes **Part 2** faster to compute...
+
+<pre class="q" id='solution'></pre>

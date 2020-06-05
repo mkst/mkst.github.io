@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  ":turtle: Advent of Code 2017, Day 00"
+title:  ":turtle: Advent of Code 2017, Day 00: Our first KDB session"
 date:   2017-12-26 08:00:00 +0000
 last_updated: 2018-01-13
 categories: aoc tutorial

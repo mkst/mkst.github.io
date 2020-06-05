@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  ":christmas_tree: Advent of Code 2017, Day 12"
+title:  ":christmas_tree: Advent of Code 2017, Day 12: Digital Plumber"
 date:   2018-01-28 08:00:00 +0000
 last_updated: 2018-01-28
 categories: aoc tutorial

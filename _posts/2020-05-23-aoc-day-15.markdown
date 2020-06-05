@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  ":christmas_tree: Advent of Code 2017, Day 15"
+title:  ":christmas_tree: Advent of Code 2017, Day 15: Dueling Generators"
 date:   2020-05-23 08:00:00 +0000
 last_updated: 2020-05-23
 categories: aoc tutorial
@@ -15,7 +15,7 @@ After the complexity of [Day 14]({{ site.baseurl }}{% post_url 2020-05-21-aoc-da
 > As they do this, a judge waits for each of them to generate its next value, **compares the lowest 16 bits of both values**, and **keeps track of the number of times those parts of the values match**.
 > To get a significant sample, the judge would like to consider **40 million pairs**.
 
-So, we need to iterate **40 million** times, comparing the outputs of Generator A and Generator B. Let's crack on.
+So, we need to iterate **40 million** times, comparing the outputs of *Generator A* and Generator B. Let's crack on.
 
 ## Solving Part 1
 
@@ -237,7 +237,7 @@ q){ (first[x] + (~). r mod 65536; r:mod[16807 48271 * last x;2147483647] ) }/[40
 1534943907 395988311
 ```
 
-We need to feed in our own input and re-run the 40 million iterations. Lets `read0` our input file:
+We need to feed in our own [puzzle input](https://adventofcode.com/2017/day/15/input) and re-run the 40 million iterations. Lets `read0` our input file:
 
 ```q
 q)read0 `:input/15.txt
@@ -278,10 +278,195 @@ q){ (first[x] + (~). r mod 65536; r:mod[16807 48271 * last x;2147483647] ) }/[40
 
 ## Solving Part 2
 
-*Coming soon...*
+**Part 2** is only a slight twist on **Part 1** - and whilst we won't be re-using the function from earlier, we will be re-using much of the same logic as before.
+
+Challenge text below with the key parts highlighted:
+
+> [The generators] still generate values in the same way, but now they only hand a value to the judge when it meets their criteria:
+> - **Generator A looks for values that are multiples of 4.**
+> - **Generator B looks for values that are multiples of 8.**
+> This change makes the generators much slower, and the judge is getting impatient; it is now only willing to consider **5 million pairs**.
+
+Therefore we need to generate 5 million values for *Generator A* and 5 million values for *Generator B*, and compare each pair of values. We can do this by creating a list of values for *Generator A*, and a list of values for *Generator B*, and compare them.
+
+Whilst for **Part 1**, we were generating pairs of values in a single function, for **Part 2** we will break the generation into two separate functions, one for *Generator A*, one for Generator B.
+
+Generator A uses `16807` as it's 'factor', and the example starting value for *Generator A* is `65`.
+
+```q
+q){ mod[x * 16807;2147483647] } 65
+1092455
+```
+
+We need to determine whether the latest result of *Generator A* is divisible by `4`, and if it is we can add it to a list called `A`.
+
+As we saw way back on [Day 2]({{ site.baseurl }}{% post_url 2017-12-27-aoc-day-02 %}){: .internal-link }, we can use the `mod` operator to get the remainder of the division of two numbers.
+
+```q
+q)1092455 mod 4
+3
+q)0=1092455 mod 4
+0b
+```
+
+The `mod` of `1092455` and `4` is not zero, therefore `1092455` is not divisible by `4`. We can use this basic logic to decide whether or not to add each result to list `A`. First lets define our global variable `A` and initialise it as an empty list:
+
+```q
+q)A:()
+```
+
+To add to a list we can use the append syntax `,:`:
+
+```q
+q)A,:1
+q)A,:2
+q)A,:3
+q)A
+1 2 3
+q)count A
+3
+```
+
+`A` is a simple list and we can join another simple list, e.g. `4 5`, to it:
+
+```q
+q)A,:4 5
+q)A
+1 2 3 4 5
+q)count A
+5
+```
+
+In pseudocode what we want to do is:
+
+```
+f:{
+  if (newly generated value) modulo 4 is zero
+    add to list A
+  else
+    do nothing
+
+  return newly generated value
+}
+```
+
+We can translate this to Q as:
+
+```q
+f:{
+  n:mod[x * 16807;2147483647]; / save newly generated value as 'n'
+  if[0 = n mod 4;              / is the new result divisible by 4?
+    A,:n                       / if so, append to list A
+    ];
+  / no need for an 'else'
+  n                            / return newly generated value
+}
+```
+
+...or shrinking down to a 1-liner:
+
+```q
+q)f:{ n:mod[x * 16807;2147483647]; if[0 = n mod 4;A,:n]; n }
+```
+
+We want to run this function until A contains **5 million** entries. Back on [Day 3]({{ site.baseurl }}{% post_url 2017-12-27-aoc-day-03 %}){: .internal-link } we saw the [converge](https://code.kx.com/q/ref/accumulators/#converge) pattern that runs a function until a condition no longer holds true:
+
+```q
+q){ x + 1 }/[{ x < 10 };] 3 / call the function until x is no longer less than 10
+10
+q){ x + 1 }\[{ x < 10 };] 3 / same but return intermediate steps
+3 4 5 6 7 8 9 10
+```
+
+In our case, we want to iterate while there are fewer than 5 million entries in `A`, or to put it another way, the `count` of `A` is less-than 5 million:
+
+```q
+q)f:{ n:mod[x * 16807;2147483647]; if[0 = n mod 4;A,:n]; n }/[{ (count A) < 5000000 };]
+q)f:{ n:mod[x * 16807;2147483647]; if[0 = n mod 4;A,:n]; n }/[{ 5000000 > count A };] / no brackets
+```
+
+Let's swap out the **5 million** for just **5**, run the function and compare its output to the expected output:
+
+```q
+q)A:() / reset A back to an empty list
+q){ n:mod[x * 16807;2147483647]; if[0 = n mod 4;A,:n]; n }/[{ (count A) < 5 };65]
+740335192
+q)A
+1352636452 1992081072 530830436 1980017072 740335192
+```
+
+These match up to the examples for *Generator A* in the Challenge text:
+
+```
+--Gen. A--  --Gen. B--
+1352636452  1233683848
+1992081072   862516352
+ 530830436  1159784568
+1980017072  1616057672
+ 740335192   412269392
+```
+
+OK! Let's reset A, and run for 5 million:
+
+```q
+q){ n:mod[x * 16807;2147483647]; if[0 = n mod 4;A,:n]; n }/[{ (count A) < 5000000 };65]
+648634980
+q)count A
+5000000
+q)A
+1352636452 1992081072 530830436 1980017072 740335192 2099633200 1083904896 1239932660 366906132 260934108 1604199484 2079041784 1086548036 112881888 1767310380 1723250404 1582998620 854985672..
+```
+
+Now for **Generator B**, let's create the empty list `B` to store the values in:
+
+```q
+q)B:()
+```
+
+We can re-use our function, just changing a few of the values:
+ - the `factor` from `16807` to `48271`,
+ - the divisor from `4` to `8`, and (most importantly)
+ - the list to append values to from `A` to `B`
+
+```q
+q){ n:mod[x * 48271;2147483647]; if[0 = n mod 8;B,:n]; n }/[{ 5000000 > count B };]
+```
+
+Feeding in the starting value for *Generator B* will kick off the generator. Note that this generator takes a fair while longer to run that the first.
+
+We now have the two lists and need to compare the lowest 16 bits from each. We saw from **Part 1** that taking a number modulo `65536` is equivalent to taking the lowest 16 bits, therefore we can apply this modulo to both `A` and `B`, and check equality with `=`:
+
+```q
+q)mod[A;65536]
+38948 48816 54372 43440 40536 56368 4992 57076 35604 35292 9276 43256 26692 28896 1068 46820 42076 3016 29588 1524 40904 20808 2916 26584 50800 37768 752 2728 46300 41524 22892 60792 29736..
+q)mod[B;65536]
+34184 62592 59512 5448 47952 55944 28912 31808 45816 13496 38760 15560 18512 60168 41312 40328 49376 36888 42760 30456 15904 41080 60480 43176 9800 10040 42680 59632 43448 25112 38336..
+q)mod[A;65536]=mod[B;65536]
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000..
+```
+
+We can use `sum` to sum up all the 'truthy' cases (the matches):
+
+```q
+q)sum mod[A;65536]=mod[B;65536]
+309i
+```
+
+This matches the example, so the only thing left is to reset the lists A and B and to feed your [puzzle input](https://adventofcode.com/2017/day/15/input) values in and collect your second star:
+
+```q
+q)i:"J"$last each " "vs'read0 `:input/15.txt / read in our input, save as 'i'
+q)A:B:()                                     / shortcut way to set both A and B to empty list
+q){ n:mod[x * 16807;2147483647]; if[0 = n mod 4;A,:n]; n }/[{ (count A) < 5000000 };] first i
+875661760
+q){ n:mod[x * 48271;2147483647]; if[0 = n mod 8;B,:n]; n }/[{ (count B) < 5000000 };] last i
+415075424
+q)sum mod[A;65536]=mod[B;65536]
+336i
+```
 
 ## Complete Solution To Day 15
 
-My full solution for **Day 15** is below.
+My full solution for **Day 15** is below. There are a few tweaks, such as in-lining the generated value into the if-statement clause, but, for the most part, it matches this post.
 
 <pre class="q" id='solution'></pre>
