@@ -1,0 +1,465 @@
+---
+layout: post
+title:  ":christmas_tree: Advent of Code 2017, Day 17: Spinlock"
+date:   2020-06-13 08:00:00 +0000
+last_updated: 2020-06-13
+categories: aoc tutorial
+onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/17.q', 'solution')
+---
+
+# Day 17: Spinlock
+
+Today's challenge is another one where **Part 1** is relatively straightforward, but we have to think outside the box to gain the second star.
+
+Challenge text snippet is shown below with the key parts highlighted.
+
+> It starts with a **circular buffer containing only the value 0**, which it marks as the **current position**. It then **steps forward** through the circular buffer some number of steps (**your puzzle input**) before inserting the first new value, 1, after the value it stopped on. The **inserted value becomes the current position**. Then, **it steps forward from there the same number of steps**, and wherever it stops, inserts after it the second new value, 2, and uses that as the new current position again.
+>
+> **It repeats this process** of stepping forward, inserting a new value, and using the location of the inserted value as the new current position **a total of 2017 times**, inserting 2017 as its final operation, and **ending with a total of 2018 values (including 0) in the circular buffer**.
+
+This doesn't sound too bad, we will be creating an ever-growing list; either adding a new item to the end of it, or inserting the item somewhere in the middle, and stop when we have inserted item `2017`.
+
+> What is the value after 2017 in your completed circular buffer?
+
+Once we've created our list, we just need to find the item to the right of `2017`. Let's get started!
+
+## Solving Part 1
+
+The list starts with `0`, and we know that the next item (`1`) has to go after this to create the list `0 1`. This is because after stepping forward 'puzzle input' steps, the item is always inserted *after* the current item, and stepping through a 1-item list will always land on the first item!
+
+Let's work through the example that has been given to us, where the number of steps is `3`:
+
+```q
+q)steps:3
+```
+
+.. and the initial position is `0`:
+
+```q
+q)position:0
+```
+
+If we want to add the item `1` to the list `0`, we would need to step forward `steps` from `position` and then add 1.
+
+Q does not have the concept of circular lists, but as we saw back on [Day 10]({{ site.baseurl }}{% post_url 2018-01-17-aoc-day-10 %}){: .internal-link }, we can use the [mod](https://code.kx.com/q/ref/mod/) operator to work out where we need to be if we happen to go past the end of the list.
+
+We want to modulo `steps + position` by `length of list`:
+
+```q
+q)mod[steps + position;1] / the list has 1 item
+0
+```
+
+To write this as a lambda, passing in our list:
+
+```q
+q){ mod[steps + position;count x] } 0
+0
+```
+
+The item needs to be inserted at the position *after* this:
+
+```q
+q){ 1 + mod[steps + position;count x] } 0
+1
+```
+
+As position `1` is outside of our list, we would simply append the item (`1`) to the end of the list.
+
+We then need to update the `position` value to be `1`. Let's write this out as a function called `spinlock`:
+
+```q
+spinlock:{
+  new_position:1 + mod[steps+position;count x];
+  position::new_position; / need to use :: as 'position' is a global variable
+  x,1
+  }
+```
+
+Testing it out gives us the expected result:
+
+```q
+q)spinlock:{ new_position:1 + mod[steps+position;count x]; position::new_position; x,1 }
+q)spinlock 0
+0 1
+```
+
+With `position` now set to `1`, and a list containing `2` items, stepping forward `3` steps and adding `1` gives us a new position, `1`:
+
+```q
+q)1 + mod[steps+position;2]
+1
+```
+
+This is in the middle of the list, so our function needs to be updated.
+
+Firstly, rather than always appending `1`, we can pass in the new item as an argument, we can use the implicit `y` argument:
+
+```q
+spinlock:{  
+  new_position:1 + mod[steps+position;count x];  
+  position::new_position;  
+  x,y / append y to list x
+  }
+```
+
+We want to see whether the `new_position` is equal to the length of the list, if so we can just append, else we need to perform an insertion. We can use the [cond](https://code.kx.com/q/ref/cond/) functionality `$[condition;true;false]` for this:
+
+```q
+spinlock:{  
+  new_position:1 + mod[steps+position;count x];  
+  position::new_position;  
+  $[new_position=count x;
+    x,y;
+    / TODO: else insert y into x
+    ]
+  }
+```
+
+A nice way to insert a new item into a list at position 'i' is to take 'i' items from the front of the list, add the item, and then join with the result of dropping 'i' items from the front of the list, e.g.
+
+```q
+q){ (y#x),z,y _ x }[10#1;5;2] // insert '2' after index 5 of list of 10 1s
+1 1 1 1 1 2 1 1 1 1 1
+```
+
+With this problem solved we can update the `spinlock` else clause:
+
+```q
+spinlock:{  
+  new_position:1 + mod[steps+position;count x];  
+  position::new_position;  
+  $[new_position=count x;
+    x,y;                                / append y to x
+    (new_position#x),y,new_position _ x / else insert y into x
+    ]
+  }
+```
+
+Astute readers will notice that our assignment to `new_position` is redundant, and we can simply update `position`:
+
+```q
+spinlock:{  
+  position::1 + mod[steps+position;count x]; / assignment straight back to 'position' (note ::)
+  $[position=count x;
+    x,y;
+    (position#x),y,position _ x
+    ]
+  }
+```
+
+We can try this function out with the list `0 1` and item `2`:
+
+```q
+q)spinlock:{ position::1 + mod[steps+position;count x]; $[position=count x; x,y; (position#x),y,position _ x ] }
+q)spinlock[0 1;2]
+0 2 1
+```
+
+Now with the item `3`:
+
+```q
+q)spinlock[0 2 1;3] / looks good
+0 2 3 1
+```
+
+.. and `4`:
+
+```q
+q)spinlock[0 2 3 1;4] / also looks good!
+0 2 4 3 1
+```
+
+We are on the right track, but doing this another 2013 times by hand is going to take a while. We can leverage the [scan](https://code.kx.com/q/ref/over/) operator that we've used on multiple days to feed in the result back into the function.
+
+In order to do so, we need a minor modification to our `spinlock` function. The [drop](https://code.kx.com/q/ref/drop/) operator `_` does not work on atoms, therefore we need to ensure that we are dropping from a *list*. We can do this by prepending the empty list, `()`, to the item before we drop from it:
+
+```q
+spinlock:{  
+  position::1 + mod[steps+position;count x];  
+  $[position=count x;
+    x,y;
+    (position#x),y,position _ (),x / ensure we drop from a list
+    ]
+  }
+```
+
+With this in place, we can simply reset `position` to `0`, and `scan` over the list of `0` through `2017`:
+
+```q
+q)position:0 / reset position!
+q)spinlock/[til 2018]
+0 1226 1635 517 218 920 1636 1227 690 388 1637 291 1228 921 1638 518 691 1229..
+```
+
+Let's do that again but save the result as `result`:
+
+```q
+q)position:0 / reset position
+q)result:spinlock/[til 2018]
+```
+
+We want to find `2017` in the result, to do this we will use the [find](https://code.kx.com/q/ref/find/) operator, `?`.
+
+```q
+q)result?2017 / lookup right in left
+1530
+```
+
+The next item we want is at the next index, i.e. `1+1530`, so we can add `1` and index back into `result`:
+
+```q
+q)result 1+result?2017
+638
+```
+
+That matches the expected result from the example, the only thing to do is to update `steps` with the value from our puzzle input - which is hard-coded into the page - and re-run for our first star!
+
+## Bonus 1
+
+Global variables are sacrilege to the Q-gods. Functions should not rely on [external state](https://en.wikipedia.org/wiki/Pure_function); we should therefore re-write `spinlock` to remove the dependency on the `position` variable.
+
+As we saw on [Day 10]({{ site.baseurl }}{% post_url 2018-01-17-aoc-day-10 %}){: .internal-link } we can use a list to hold state, and return this from each call to the function.
+
+We will keep track of `position` as the first item in the list, and the second item of the list will be the original spinlock list we have been working with. We will rename the variable `pos` to avoid clashing with the global variable.
+
+Our `spinlock` function becomes:
+
+```q
+spinlock:{  
+  pos:1 + mod[steps+first x;count last x];  
+  $[pos=count last x;
+    (pos;last x,y);
+    (pos;(pos#last x),y,pos _ (),last x)
+    ]
+  }
+```
+
+If we run it now, after setting `steps` back to `3` per the example, we see that the result of the function is the 2-item list:
+
+```q
+q)spinlock/[til 2018]
+1530                        / first item
+0 1226 1635 517 218 920 1636 1227 690 388 1637 291 1228 921 1638 518 691 1229 1639 16 922 92 1640 1230 389 692 1641 923 1231 519 1642 164 292.. / second item
+```
+
+The reason this works as-is, is because the first call to the function treats `x` as `0` and `y` as `1`, and therefore `first x` and `last x` of an atom will just return that atom.
+
+We can get the result we want by taking the `last` of this:
+
+```q
+q)result:spinlock/[til 2018]
+q)last[result]?2017
+1530
+q)last[result] 1+last[result]?2017
+638
+```
+
+Alternatively, we can wrap the inner workings of `spinlock` in a lambda and return the `last` from that:
+
+```q
+spinlock:{  
+  last {
+    pos:1 + mod[steps+first x;count last x];  
+    $[pos=count last x;
+      (pos;last[x],y);
+      (pos;(pos#last x),y,pos _ (),last x)
+      ]
+    }/[x]
+  }
+```
+
+This means we can just run `spinlock` with the argument `til 2018`:
+
+```q
+q)result:spinlock til 2018
+q)result?2017
+1530
+q)result 1+result?2017
+638
+```
+
+We've removed the dependency on the global `position` variable, but are still reliant on `steps`. We can remove this by passing it into `spinlock` (and the inner lambda).
+
+Passing it in as the first argument means we need to shift all `x` to `y` and all `y` to `z`:
+
+```q
+spinlock:{
+  last {
+    pos:1 + mod[x+first y;count last y];
+    $[pos=count last y;
+      (pos;last[y],z);
+      (pos;(pos#last y),z,pos _ (),last y)
+      ]
+    }[x]/[y]
+  }
+```
+
+Note that this means we are effectively setting `x` to always be the steps, we are not iterating over the value (which is what would be happening if we did `/[x;y]`).
+
+## Bonus 2
+
+The observant amongst you may have noticed that the item being passed (`z`) is equivalent to the current length of the list (`count last y`). We can therefore replace `count last y` with `z`:
+
+```q
+spinlock:{
+  last {
+    pos:1 + mod[x+first y;z]; / replace 'count last y' here
+    $[pos=z;                  / and here
+      (pos;last[y],z);
+      (pos;(pos#last y),z,pos _ (),last y)
+      ]
+    }[x]/[y]
+  }
+```
+
+We can also tidy up the assignment to `pos` by switching the order of the condition:
+
+```q
+spinlock:{
+  last {    
+    $[z=pos:1 + mod[x+first y;z]; / switch so z is on the left of the equals
+      (pos;last[y],z);
+      (pos;(pos#last y),z,pos _ (),last y)
+      ]
+    }[x]/[y]
+  }
+```
+
+The *truly* observant will have noticed that if a list has 10 items and we want to insert at position 10, it is equivalent to do either the append or the insert:
+
+```q
+q)l:til 10             / create a list
+q)l
+0 1 2 3 4 5 6 7 8 9
+q)l,10                 / append 10 to the list
+0 1 2 3 4 5 6 7 8 9 10
+q)(10#l),10,10 _ l     / insert 10 at index 10
+0 1 2 3 4 5 6 7 8 9 10
+```
+
+Therefore we can remove the condition statement entirely and always perform the insert behaviour.
+
+```q
+spinlock:{
+  last {
+    pos:1 + mod[x+first y;z];
+    (pos;(pos#last y),z,pos _ (),last y)
+    }[x]/[y]
+  }
+```
+
+... if we *really* want to go to town with shrinking down our code, we can switch the order of our list, so we return `(list;position)` which reduces our inner lambda to a single line:
+
+```q
+spinlock:{
+  first {
+    ((pos#first y),z,pos _ (),first y;pos:1+mod[x+last y;z]) / (list;position)
+    }[x]/[y]
+  }
+```
+
+## Bonus 3
+
+After taking a look online to see what other AoC coders did for today's challenge, I learnt of a much simpler approach - appending to a rotated list will solve **Part 1** with ease:
+
+```q
+q){ (x rotate (),y),z }[3]/[til 2018]
+638 1513 851 1135 269 1514 359 479 1136 1515 852 639 11 1516 1137 202 853 1517 85 1138 640 1518 480 854 1139 1519 360 270 641 1520 1140 855 20 1521 481 1141 152 1522 856 642..
+```
+
+`2017` is added at the end of the list, therefore the item to the 'right' of it will be the item at index `0`, i.e. the `first` item. There is no need to keep track of the position because we are always appending to the end of the list!
+
+```q
+q)first { (x rotate (),y),z }[3]/[til 2018]
+638
+```
+
+## Solving Part 2
+
+
+>The good news is that you have improved calculations for how to stop the spinlock. They indicate that **you actually need to identify the value after 0 in the current state of the circular buffer**.
+>
+>The bad news is that while you were determining this, **the spinlock has just finished inserting its fifty millionth value (50000000)**.
+>
+>What is **the value after 0 the moment 50000000 is inserted?**
+
+If we look at how long it takes to calculate lists of 1,000, 10,000 and 100,000 items, we can see that it is not feasible to calculate the result of a 50 million item list - at least not in our lifetimes:
+
+```q
+q)\t spinlock til 1000   / 1 millisecond
+1
+q)\t spinlock til 10000  / 37 milliseconds
+37
+q)\t spinlock til 100000 / uh-oh, 3.5 seconds!
+3539
+```
+
+Perhaps if we had the luxury of double-linked lists, where insertions were significantly cheaper it would be possible, but we don't, therefore we need to find an alternative.
+
+An interesting aspect of the spinlock list, is that items are never inserted at the start of the list. The first item in the list will **always** be `0`. This means that an item added at position `1` will remain there until a new item is added at position `1`.
+
+The consequence of that, is that in order to solve **Part 2**, we only need to keep track of the position that each item would be stored at, and the last item to be inserted at position `1`. This means we do not have to construct a 50-million item list and, therefore, the computation time should be manageable.
+
+We know that in order to calculate the new position we need the current position, the number of steps, and the length of the circular list. We saw from **Part 1** that the new item being added each time is equivalent to the length of the list, therefore we can work out the new position based from the current position, number of steps and the new item being added.
+
+If we use `x` as the number of steps, `y` as the current position and `z` as the new item (as per **Part 1**), then the code is simply:
+
+```q
+q){ 1 + mod[x + y;z] }
+q){ 1 + mod[x + y;z] }[3;0;1] / position after inserting item 1
+1
+q){ 1 + mod[x + y;z] }[3;1;2] / position after inserting item 2
+1
+q){ 1 + mod[x + y;z] }[3;1;3] / position after inserting item 3
+2
+q){ 1 + mod[x + y;z] }[3;2;4] / position after inserting item 4
+2
+```
+
+This matches up with the example. We want to keep track of the positions, so we can use `scan` to return all intermediate steps of the function calls. For example, let's calculate the position of the first 20 items:
+
+```q
+q){ 1 + mod[x + y;z] }[3]\[til 20]
+0 1 1 2 2 1 5 2 6 1 5 9 1 5 9 13 1 5 9 13
+```
+
+The final number to be inserted at position `1` is `16`. It's easy enough to count up by hand in this simple example, but counting up to 50 million would not be so fun.
+
+We want to identify the *last* occurrence of `1` in the list.
+
+Firstly we can determine whether the list equals `1`:
+
+```q
+q)1={ 1 + mod[x + y;z] }[3]\[til 20]
+01100100010010001000b
+```
+
+Then we can use `where` to give us the indices (which are equivalent to the items being added to the list):
+
+```q
+q)where 1={ 1 + mod[x + y;z] }[3]\[til 20]
+1 2 5 9 12 16
+```
+
+.. and we just want the `last` one:
+
+```q
+q)last where 1={ 1 + mod[x + y;z] }[3]\[til 20]
+16
+```
+
+If we replace the `til 20` with `til 50000000` and wait a few seconds (30 on my laptop), we will get the answer of `1222153`
+
+```q
+q)last where 1={ 1+(x+y) mod z }[3]\[til 50000000]
+1222153
+```
+
+All that's left is to replace the example `3` with your puzzle input and collect today's 2nd star.
+
+## Complete Solution To Day 17
+
+My full solution to Day 17 is shown below, no real changes from the post except that I saved the puzzle input as `17.txt` rather than hardcoding.
+
+<pre class="q" id='solution'></pre>

@@ -270,9 +270,6 @@ q)a:1; { a::a+x } peach 1 2 3
   [0]  a:1; { a::a+x } peach 1 2 3
 ```
 
-
-
-
 ## Solving Part 2
 
 > Now, all the defragmenter needs to know is the number of regions. **A region is a group of used squares that are all adjacent**, not including diagonals. Every used square is in exactly one region: lone used squares form their own isolated regions, while several **adjacent squares all count as a single region**.

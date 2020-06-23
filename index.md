@@ -17,4 +17,6 @@ After completing the 2017 [AdventOfCode](https://adventofcode.com/) challenges u
 
 Each post will detail parts 1 and 2 of the day's challenge. I'll explain my thought process, building up each solution piece-by-piece.
 
+My intention is for this to be accessible to people who may have some prior programming experience, but are new to Q.
+
 All solutions are available in my [AoC Github repository](https://github.com/streetster/aoc).
