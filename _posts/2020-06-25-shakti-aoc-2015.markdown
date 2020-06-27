@@ -1,0 +1,502 @@
+---
+layout: post
+title:  ":christmas_tree: Advent of Code 2015 in Shakti"
+date:   2020-06-25 08:00:00 +0000
+last_updated: 2020-06-28
+categories: shakti
+---
+
+# Introduction
+
+This is my attempt to solve AoC 2015 using [shakti](https://www.shakti.com). It's a work-in-progress. The goal is for me to learn k9 and to have idiomatic solutions, not necessarily to just golf the solutions into oblivion. Comments and criticism are encouraged.
+
+With thanks to [John Estrada](https://estradajke.github.io/k9-simples/k9/index.html) for his k9 manual.
+
+# Contents
+
+  - :star: :star: [Day 1: Not Quite Lisp](#day-1-not-quite-lisp)
+  - :star: :star: [Day 2: I Was Told There Would Be No Math](#day-2-i-was-told-there-would-be-no-math)
+  - :star: :star: [Day 3: Perfectly Spherical Houses in a Vacuum](#day-3-perfectly-spherical-houses-in-a-vacuum)
+  - :star: :star: [Day 4: The Ideal Stocking Stuffer](#day-4-the-ideal-stocking-stuffer)
+  - :star: :star: [Day 5: Doesn't He Have Intern-Elves For This?](#day-5-doesnt-he-have-intern-elves-for-this)
+  - :star: :star: [Day 6: Probably a Fire Hazard](#day-6-probably-a-fire-hazard)
+  - :star: :star: [Day 7: Some Assembly Required](#day-7-some-assembly-required)
+  - :star: :star: [Day 8: Matchsticks](#day-8-matchsticks)
+  - :star: :star: [Day 9: All in a Single Night](#day-9-all-in-a-single-night)
+  - :star: :star: [Day 10: Elves Look, Elves Say](#day-10-elves-look-elves-say)
+  - :star: :star: [Day 11: Corporate Policy](#day-11-corporate-policy)
+  - :star: :star: [Day 12: JSAbacusFramework.io](#day-12-jsabacusframeworkio)
+  - :star: :star: [Day 13: Knights of the Dinner Table](#day-13-knights-of-the-dinner-table)
+  - :star: :construction: [Day 14: Reindeer Olympics](#day-14-reindeer-olympics)
+  - :construction: :construction: [Day 15: Science for Hungry People](#day-15-science-for-hungry-people)
+  - :construction: :construction: [Day 16: Aunt Sue](#day-16-aunt-sue)
+  - :star: :star: [Day 17: No Such Thing as Too Much](#day-17-no-such-thing-as-too-much)
+  - :star: :star: [Day 18: Like a GIF For Your Yard](#day-18-like-a-gif-for-your-yard)
+  - :star: :star: [Day 19: Medicine for Rudolph](#day-19-medicine-for-rudolph)
+  - :star: :star: [Day 20: Infinite Elves and Infinite Houses](#day-20-infinite-elves-and-infinite-houses)
+  - :construction: :construction: [Day 21: RPG Simulator 20XX](#day-21-rpg-simulator-20xx)
+  - :construction: :construction: [Day 22: Wizard Simulator 20XX](#day-22-wizard-simulator-20xx)
+  - :star: :star: [Day 23: Opening the Turing Lock](#day-23-opening-the-turing-lock)
+  - :star: :star: [Day 24: It Hangs in the Balance](#day-24-it-hangs-in-the-balance)
+  - :star: [Day 25: Let It Snow](#day-25-let-it-snow)
+
+
+## Day 1: Not Quite Lisp
+
+```q
+*|s:+\1 -1")"=*0:"input/01.txt"
+1+s?-1
+```
+
+This is almost a 1:1 copy of the Q version, only difference is that loading a file from disk, `0:`, takes a string rather than a symbol.
+
+## Day 2: I Was Told There Would Be No Math
+
+```q
+t:+`w`h`l!+^'"i"$'"x"\'0:"input/02.txt"
+
+first select +/(2*w*l)+(3*w*h)+2*h*l from t
+first select +/(w*h*l)+(2*w+h) from t
+```
+
+Another near 1:1 copy with some subtle changes:
+
+  - `"i"$` replaces `"I"$` casting and does not fully descend (hence the `'`)
+  - `^` replaces `asc`
+  - `first select` replaces `exec`
+
+## Day 3: Perfectly Spherical Houses in a Vacuum
+
+```q
+#?+\d:(0 1;0 -1;-1 0;1 0)"^v<>"?*0:"input/03.txt"
+#?,/+\2^d
+```
+
+So far, so straightforward. `2^` (2 cut) replaces `0N 2#`.
+
+## Day 4: The Ideal Stocking Stuffer
+
+There is no built-in MD5 in shakti, so this uses the ffi interface.
+
+```q
+md5:*"../src/aoc.so"2:`md5!1
+
+f:{[x;y;z] $[(y#"0")~y#md5 x,$z;z;z+1]}[*0:"input/04.txt";]
+
+f[5]/:1
+f[6]/:1
+```
+
+C code, `aoc.c`:
+
+```c
+#include <stdio.h>
+#include <string.h>
+#include <openssl/evp.h>
+
+#include "k.h"
+
+// gcc -shared -o aoc.so -lcrypto -fPIC ./aoc.c
+
+// md5:*"./aoc.so"2:`md5!1
+K md5(S x)
+{
+  unsigned int MD5_HASH_LENGTH = 16;
+  unsigned char digest[MD5_HASH_LENGTH];
+  char out[1+2*MD5_HASH_LENGTH];
+
+  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+  EVP_MD_CTX_init(mdctx);
+  EVP_DigestInit(mdctx, EVP_md5());
+  EVP_DigestUpdate(mdctx, x, strlen(x));
+  EVP_DigestFinal(mdctx, digest, &MD5_HASH_LENGTH);
+  EVP_MD_CTX_free(mdctx);
+
+  for (int i = 0; i < 16; i++)
+  {
+    sprintf(out + (i*2), "%02x", digest[i]);
+  }
+
+  return k((S)'s', (U)out);
+}
+```
+
+## Day 5: Doesn't He Have Intern-Elves For This?
+
+```q
+sw:{[x;y] (y-1)_(-y)#',\x}                        / sliding window
+
+v:{[x] 2<#"aeiou"#x}                              / 3 vowels
+d:{[x] |/=':x}                                    / doubles
+b:{[x] ~#(2^"abcdpqxy")#sw[;2] x}                 / no bad chars
+
+p:{[x] $[2=c:#w:&1<+/s~\/s:sw[;2] x;~1=-/|w;2<c]} / non-overlapping pair
+r:{[x] |/x=x(!#x)-2}                              / repeat aBa
+
++/{[x] v[x]&d[x]&b x}'i:0:"input/05.txt"
++/{[x] p[x]&r x}'i
+```
+
+Using `#` to filter the list in both the vowel and bad character checks was a nice simplification.
+
+## Day 6: Probably a Fire Hazard
+
+```q
+s:{[x] +"ii"$","\'x $[5=#x:" "\x;2 4;1 3]} / sanitise
+r:{[x;y] x+!1+y-x}                         / range
+
+f:{[x;y] $["n"=y 6;.[x;;:;1];"f"=y 6;.[x;;:;0]; .[x;;:;1 0 x . c]] c:r .'s y}
+g:{[x;y] $["n"=y 6;.[x;;+;1];"f"=y 6;.[x;;:;0|-1+x . c];.[x;;+;2]] c:r .'s y}
+
++/,/(1000^1000000#0)f/:i:0:"input/06.txt"
++/,/(1000^1000000#0)g/:i
+```
+
+I struggled with the parser during this challenge. It does not like conditional statements split over multiple lines.
+
+Other notes:
+ - The use of `/:` to scan over y given x, which was just `/` in Q.
+ - We can cast multiple values with `"ii"$`
+ - The solution takes ~800ms to run in K vs ~250ms in Q, not sure why.
+
+## Day 7: Some Assembly Required
+
+```q
+g:{[x] $["0123456789"'*x;. x;(!W)'`$x;W`$x;()]} / get
+b:{[x] ((32-#b)#0),b:2\x}                       / binary
+
+w:{[x;y] $[#(),v:g@x;W[`$y]:v;()]}              / wire
+n:{[x;y] $[#(),v:g@x;W[`$y]:2/16 _1 0 b v;()]}  / not
+a:{[x;y;z] $[2=#,/v:g'(x;y);W[`$z]:2/&/b'v;()]} / and
+o:{[x;y;z] $[2=#,/v:g'(x;y);W[`$z]:2/|/b'v;()]} / or
+l:{[x;y;z] $[2=#,/v:g'(x;y);W[`$z]:{[x;y] 2/16 _ b[x],y#0}. v;()]} / lshift
+r:{[x;y;z] $[2=#,/v:g'(x;y);W[`$z]:{[x;y] 2/(-y) _ b x}. v;()]}    / rshift
+
+f:{[x] $[(!W)'`$*|x;();$[3=#x;w . x 0 2;4=#x;n . x 1 3;((a;o;l;r)"AOLR"?x[1;0]). x 0 2 4]]}
+
+W:`!0N / Wires
+{[x;y] f'x;W}[i:" "\'0:"input/07.txt"]/:0;
+A:W`a;A
+
+W:`!0N
+i:@[i;&(,"b")~/(*|)'i;:;,($A;"->";,"b")]
+{[x;y] f'x;W}[i]/:0;
+*W`a
+```
+
+Some challenges lend themselves to Q/K. Some do not. This is one that falls into the latter camp. There were also a number of teething problems when re-writing this in shakti:
+
+Pain points here:
+  - Cannot count an atom, hence `#(),v`
+  - No `0b vs` so have to pad `2\` to perform binary operations
+
+## Day 8: Matchsticks
+
+```q
+d:{[x]
+  /(count;previous;skip)
+  *(0;" ";0){[x;y]
+    c:x 0;
+    $[s:x 2;(c;y;s-1);"\\"= x 1;$[y="x";(1+x 0;y;3);(1+x 0;y;1)];(1+x 0;y;0)]}/:x}
+
++/{[x] (2+#x)-d x}'i:0:"input/08.txt"
++/{[x] 2++/"\"\\"'x}'i
+```
+
+Lack of `ssr` meant I relied on my [go](https://github.com/streetster/aoc/blob/master/2015/08.go) approach for Part 1.
+
+Also it's interesting to note that if you place an int to the left of `+/` it does not get treated as the starting value as it does in Q:
+
+```q
+1+/1 2 3  / 1+ is applied to each-right
+2 3 4
+1++/1 2 3 / 1+ sum
+7
+```
+Versus Q:
+```q
+q)\
+  1+/1 2 3 / 1 is treated as the start of the accumulator
+7
+```
+
+## Day 9: All in a Single Night
+
+```q
+k:{[x](,/@\)/,\(,<<)'x=/x:!x} / from: https://groups.google.com/d/msg/shaktidb/OTsNFbAa7dI/sRmpNwYPAwAJ
+sw:{[x;y] (y-1)_(-y)#',\x}    / sliding window
+
+r:,/{[x] (`$,/'2#''x(0 2;2 0))!2#`i$x 4}'" "\'0:"input/09.txt" / routes
+c:{[x] x@k@#x}@`$?2^,/$!r                                      / combos
+
+&/t:{[x] +/r`$,/'$sw[x;2]}'c
+|/t
+```
+
+Tables don't appear to be ready yet. Names can only be 8 characters long... So not my best work.
+
+## Day 10: Elves Look, Elves Say
+
+```q
+#@[;39] r:(.'*0:"input/10.txt"){[x;y] ,/(1_-':i,#x),'x@i:&~~':x}\:50#0
+#*|r
+```
+
+A simple translation, iterating over 50 zeros as I haven't figured out how else to do it...
+
+## Day 11: Corporate Policy
+
+```q
+a:"abcdefghijklmnopqrstuvwxyz"
+
+n:{[x] $[0=#x;"a";"z">*|x;(-1_ x),a@1+a?*|x;(n@-1_x),"a"]} / next pass
+
+s:{[x] (1_-':&1=-':a?x)'1}              / straight
+b:{[x] ~|/"iol"'x}                      / no bad chars
+p:{[x] 1<+/{[x] (1_-':&x)'1}'a=\x}      / pairs
+
+c:{[x] $[~s x;n x;~b x;n x;~p x;n x;x]} / check pass
+
+r:c/:*0:"input/11.txt";r
+c/:n r
+```
+
+I couldn't work out how to coerce integers to longs in order to do `n:{[x] a@26\1+26/a?x}`. The rest is pretty straightforward.
+
+## Day 12: JSAbacusFramework.io
+
+```q
+f:{[x;y] $[`A`L'@x;,/f[;y]'x;`NA`NI`NL'@x;$[y&|/"red"~/x[];0;,/f[;y]'x[]];`I`i'@x;x;0]}
+
++/f[;0b] j:`json?*0:"input/12.txt"
++/f[j;1b]
+```
+
+Took a bit of time to work out the various types. Haven't figured out the equivalent of `0N!` either so this was very trial-and error.
+
+## Day 13: Knights of the Dinner Table
+
+```q
+k:{[x](,/@\)/,\(,<<)'x=/x:!x} / from: https://groups.google.com/d/msg/shaktidb/OTsNFbAa7dI/sRmpNwYPAwAJ
+sw:{[x;y] x@(-y-1)_(!#x)+\!y} / sliding window
+
+h:,/{[x] (`$,/1#'x 0 10)!$["l"=*x 2;-;:] `i$x 3}'" "\'0:"input/13.txt"
+c:{[x] x@k@#x}                         / combos
+f:{[x] +/h`$s,|'s:,/'$sw[;2] (1+#x)#x} / solve
+
+|/f'c@p:`$,'?,/$!h
+|/f'c@p,`m
+```
+
+This would benefit from a more simple combination generator (as sitting `` `a`b`c `` is equivalent to sitting `` `b`c`a ``). One to revisit another day.
+
+## Day 14: Reindeer Olympics
+
+```q
+o:+`n`s`t`r!+{[x] "niii"$x 0 3 6 13}'" "\'0:"input/14.txt"
+
+{[x] |/*+x[]} select (|/+\2503#,/(t#'s),r#'0) by n from o
+/ TBD
+```
+
+:construction:
+Am having an absolute mare with the select. My Q [solution](https://github.com/streetster/aoc/blob/master/2015/14.q) is significantly simpler.
+:construction:
+
+## Day 15: Science for Hungry People
+
+```q
+c:{[x;y;z] $[z=#x;,x,y;,/c[;;z]'[x,/t;y-t:!1+y]]} / combos
+C:{[x;y] c[();x;y-1]}                             / wrapper
+
+i:+`ing`cap`dur`fla`tex`cal!+{[x] "niiiii"$x 0 2 4 6 8 10}'" "\'0:"input/15.txt"
+r:+(*+i)!+C[100;4]
+```
+
+:construction:
+No stars yet. I really struggle with tables in shakti. How to do equivalent of `1!`?
+:construction:
+
+## Day 16: Aunt Sue
+
+```q
+s:{[x] (!)."ni"$+2^@[" "\",:"_ x;2 3 4 5 6 7]}@'0:"input/16.txt"
+t:+`sue`children`cats`samoyeds`pomerani`akitas`vizslas`goldfish`trees`cars`perfumes!(,!500),500^(5000#0)
+```
+
+:construction:
+Will come back to this once I've figured out tables.
+:construction:
+
+## Day 17: No Such Thing as Too Much
+
+```q
+a:"abcdefghijklmnopqrstuvwxyz"
+d:{[x;y] x@((),y)_!#x} / used to do x_/:y
+
+b:{[x] (`$'a@!#x)!x}@|^`i$0:"input/17.txt"
+f:{[x;y;z] $[x=s:+/b@y;,y;,/f[x;;]'[y,/z w;d[z]'w:&(z>*|y)&~x<b[z]+s]]}
+
+#r:f[150;`;!b]
+-1+&/#'r
+```
+
+Relatively straightforward, a few pain points:
+
+ - Could not do `f'[a;l;l]`, had to do `f[a;;]'[l;l]`
+ - `x _/: y` is gone (atom drop) hence `{[x;y] x@((),y)_!#x}`
+ - Cannot index into char dict with `""`, `()` turns into `""`, `!0` cannot be indexed into etc
+ - `x>=y` does not exist hence `~x<y`
+
+## Day 18: Like a GIF For Your Yard
+
+```q
+g:"#"=0:"input/18.txt" / grid
+c:{[x] ,/x,\/x}@!#g    / coords
+
+f:{[x;y] s:+/(`b=@)#.[x;]'y+/(0 1;1 1;1 0;1 -1;0 -1;-1 -1;-1 0;-1 1);$[.[x;y];2 3's;3=s]}
+s:{[x] .[x;2#,0,-1+#x;:;1b]} / set corners
+
++/,/g{[x;y] (#x)^f[x]'c}/:100#0
++/,/s[g]{[x;y] s(#x)^f[x]'c}/:100#0
+```
+
+Only notable pain point here is the `` `!length `` error when indexing outside the grid, hence `` (`b=@)# `` to filter only boolean types.
+
+## Day 19: Medicine for Rudolph
+
+```q
+sw:{[x;y] (y-1)_(-y)#',\x}
+ss:{[x;y] $[1=#(),y;&x=*y;*{[x;y] $[0=#q:*|x;x;0=#p:*x;(1#q;1_q);(y+*|p)>*q;(p;1_q);(p,*q;1_q)]}[;#y]/:(();&y~/sw[x;#y])]}
+ssr:{[x;y;z] ,/@[x;i;:;(#i:1+2*!_.5*#x:(,/0,(0,#y,"")+/ss[x;y])^x)#,z]}
+
+r:{[x] (" "\x)0 2}'-2_i:0:"input/19.txt"
+s:{[x] `$(&"ABCDEFGHIJKLMNOPQRSTUVWXYZ"'x)^x}@m:*|i
+
+#?,/'$,/{[x;y;z] @[x;;:;z]'&x=y}[s].'`$/r
+
+r:|'r@>#'r[;1] / arrange largest transformations first
+
+f:{[x]
+  / (molecule;transformations)
+  m:*p:*x;
+  t:*|p;
+  $[m~1#"e";,p;(+(ssr[m;;].'r@w;t+c w:&0<c:#'ss[m;]'*'r)),1_x]}
+
+*|*f/:(,(m;0))
+```
+
+Part 1 was straightforward. I wrote `ss` (after a glimpse of John's [example](https://estradajke.github.io/k9-simples/k9/Examples.html)) to help with Part 2 (the `ssr` is a simplified version from Q).
+
+I had started with a recursive approach for Part 2 but haven't worked out a way to stop recursing without using a global variable as a flag, so stuck with iteration:
+
+```q
+f2:{[x;y;z] $[D[`FOUND]|x~1#"e";(D[`FOUND]:1b;z);,/f2[;y;]'[ssr[x;;].'y@w;z+c w:&0<c:#'ss[x;]'*'y]]}
+D:{FOUND:0b}; *1_f2[m;r;0] / how to set a global within a function?
+```
+
+## Day 20: Infinite Elves and Infinite Houses
+
+```k
+d:{[x] ?f,(f:r@&0=(r:1+!_ sqrt x) mod'x) div'x} / distinct factors
+f:{[x;y] +/r@&~(x%y)>r:d x}
+
+{[x;y] $[x<+/d y;y;y+1]}[.1*i:`i$*0:"input/20.txt"]/:1
+{[x;y;z] $[x<f[z;y];z;z+1]}[i%11;50]/:1
+```
+
+Too slow. Way too slow. `mod` and `div` are used with `'` as they do not support `y` being a list:
+
+```
+1 2 3 4 5 mod 20
+^
+!type
+```
+
+Example of timings:
+
+`K4`:
+```
+q)\t (1+)/[{ x > sum d y}[1000000];1]
+1052
+```
+`K9`:
+```
+\t {[x;y] $[x<+/d y;y;y+1]}[1000000]/:1
+19300
+```
+
+Other than catering for `div` and `mod`, this was pretty much a 1:1 copy.
+
+## Day 21: RPG Simulator 20XX
+
+:construction:
+My least favourite challenge of AoC 2015... will come back when I have figured out tables.
+:construction:
+
+## Day 22: Wizard Simulator 20XX
+
+:construction:
+... I stand corrected. So much boilerplate to get to the meat of the problem.
+:construction:
+
+## Day 23: Opening the Turing Lock
+
+```q
+f:{[x;y]
+  a:y 0;b:y 1;i:x pc:y 2;
+  $["hlf"~i 0;$["a"=*i 1;.5 1 1;1 .5 1]*(a;b;pc+1);"tpl"~i 0;$["a"=*i 1;3 1 1;1 3 1]*(a;b;pc+1);"inc"~i 0;$["a"=*i 1;1 0 1;0 1 1]+(a;b;pc);"jmp"~i 0;(a;b;pc+`i$i 1);"jie"~i 0;(a;b;pc+$[0=2 mod _y@"ab"?*i 1;`i$i 2;1]);"jio"~i 0;(a;b;pc+$[1=y@"ab"?*i 1;`i$i 2;1]);(a;b;pc)]}
+
+@[;1]@ f[p:{[x] " "\",+"_x}'0:"input/23.txt"]/:0 0 0
+@[;1]@ f[p]/:1 0 0
+```
+
+My complaint about the parser still holds, the conditional should be broken over several lines for readability...
+
+Other pain points:
+  - `,0b` is treated as *true* rather than `'type` which threw me slightly when I was debugging.
+  - `` `i$"+123" `` comes out as `0` rather than `123`, not a huge deal but different to Q.
+
+
+## Day 24: It Hangs in the Balance
+
+```q
+d:{[x;y] x@((),y)_!#x} / drop
+
+f:{[x;y;z] $[x=s:+/y;,y;,/f[x;;]'[y,/z w;d[z]'w:&(z<*|y)&~x<z+s]]}
+m:{[x] &/*/'x@&c=&/c:#'x}
+
+m f[3 div +/i;1#i;] 1_i:|^`i$0:"input/24.txt"
+m f[4 div +/i;1#i;] 1_i
+```
+
+Near carbon copy, similar to `Day 17` with the `f[]'[]`. Twice as slow as Q though:
+
+```sh
+$ time k 24.k </dev/null
+10439961859j
+72050269
+
+real	0m10.245s
+user	0m10.241s
+sys	0m0.004s
+
+$ time q 24.q </dev/null
+10439961859
+72050269
+
+real	0m5.672s
+user	0m5.665s
+sys	0m0.006s
+```
+
+## Day 25: Let It Snow
+
+```q
+i:{[x] `i$(" "\",."_x) 16 18}@*0:"input/25.txt"
+n:{[x;y;z] x++/y+1+!z-1}[1++/!*i;;] . i
+
+20151125{[x;y] 33554393 mod 252533*x}/:(n-1)#0
+```
+
+Still don't know how to iterate `n` times, so we take 18+ million zeroes and iterate over them instead...
