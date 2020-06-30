@@ -27,6 +27,7 @@ disqus:
 
 versions:
   highlightjs: 10.0.3
+  plotly: 1.33.1
 
 # Build settings
 markdown: kramdown

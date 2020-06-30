@@ -2,8 +2,9 @@
 layout: post
 title:  ":christmas_tree: Advent of Code 2015 in Shakti"
 date:   2020-06-25 08:00:00 +0000
-last_updated: 2020-06-28
+last_updated: 2020-07-01
 categories: shakti
+onload: "plot_performance()"
 ---
 
 # Introduction
@@ -27,24 +28,28 @@ With thanks to [John Estrada](https://estradajke.github.io/k9-simples/k9/index.h
   - :star: :star: [Day 11: Corporate Policy](#day-11-corporate-policy)
   - :star: :star: [Day 12: JSAbacusFramework.io](#day-12-jsabacusframeworkio)
   - :star: :star: [Day 13: Knights of the Dinner Table](#day-13-knights-of-the-dinner-table)
-  - :star: :construction: [Day 14: Reindeer Olympics](#day-14-reindeer-olympics)
-  - :construction: :construction: [Day 15: Science for Hungry People](#day-15-science-for-hungry-people)
-  - :construction: :construction: [Day 16: Aunt Sue](#day-16-aunt-sue)
+  - :star: :star: [Day 14: Reindeer Olympics](#day-14-reindeer-olympics)
+  - :star: :star: [Day 15: Science for Hungry People](#day-15-science-for-hungry-people)
+  - :star: :star: [Day 16: Aunt Sue](#day-16-aunt-sue)
   - :star: :star: [Day 17: No Such Thing as Too Much](#day-17-no-such-thing-as-too-much)
   - :star: :star: [Day 18: Like a GIF For Your Yard](#day-18-like-a-gif-for-your-yard)
   - :star: :star: [Day 19: Medicine for Rudolph](#day-19-medicine-for-rudolph)
   - :star: :star: [Day 20: Infinite Elves and Infinite Houses](#day-20-infinite-elves-and-infinite-houses)
-  - :construction: :construction: [Day 21: RPG Simulator 20XX](#day-21-rpg-simulator-20xx)
-  - :construction: :construction: [Day 22: Wizard Simulator 20XX](#day-22-wizard-simulator-20xx)
+  - :star: :star: [Day 21: RPG Simulator 20XX](#day-21-rpg-simulator-20xx)
+  - :star: :star: [Day 22: Wizard Simulator 20XX](#day-22-wizard-simulator-20xx)
   - :star: :star: [Day 23: Opening the Turing Lock](#day-23-opening-the-turing-lock)
   - :star: :star: [Day 24: It Hangs in the Balance](#day-24-it-hangs-in-the-balance)
   - :star: [Day 25: Let It Snow](#day-25-let-it-snow)
+  - :traffic_light: [Solution Comparison](#solution-comparison)
+  - :construction_worker: [Helper Code: C](#aoc.c)
+  - :construction_worker: [Helper Code: Rust](#aoc.rs)
 
+# Solutions
 
 ## Day 1: Not Quite Lisp
 
 ```q
-*|s:+\1 -1")"=*0:"input/01.txt"
+last s:+\1 -1")"=*0:"input/01.txt"
 1+s?-1
 ```
 
@@ -79,46 +84,16 @@ So far, so straightforward. `2^` (2 cut) replaces `0N 2#`.
 There is no built-in MD5 in shakti, so this uses the ffi interface, `2:`.
 
 ```q
-md5:*"../src/aoc.so"2:`md5!1
+md5:*"../rs/target/release/libaoc.so"2:`md5!1
+/md5:*"../c/aoc.so"2:`md5!1
 
-f:{[x;y;z] $[y<256/3#md5 x,$z;z+1;z]}[*0:"input/04.txt";]
+f:{[x;y;z] y<256/3#md5 (x,$z),0x0}[*0:"input/04.txt";;]
 
-f[16]/:1
-f[0]/:1
+(f[16];1+)/:0
+(f[0];1+)/:0
 ```
 
-C code, `aoc.c`:
-
-```c
-#include <stdio.h>
-#include <string.h>
-#include <openssl/evp.h>
-
-#include "k.h"
-
-// gcc aoc.c -shared -lcrypto -fPIC -o aoc.so
-
-// md5:*"./aoc.so"2:`md5!1
-K md5(const S x)
-{
-  unsigned int MD5_HASH_LENGTH = 16;
-  unsigned char digest[MD5_HASH_LENGTH];
-
-  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
-  EVP_MD_CTX_init(mdctx);
-  EVP_DigestInit(mdctx, EVP_md5());
-  EVP_DigestUpdate(mdctx, x, strlen(x));
-  EVP_DigestFinal(mdctx, digest, &MD5_HASH_LENGTH);
-  EVP_MD_CTX_free(mdctx);
-
-  K out = k((S)'I', MD5_HASH_LENGTH);
-  for (int i = 0; i < 16; i++)
-  {
-    ((I*)out)[i] = (unsigned char) digest[i];
-  }
-  return out;
-}
-```
+See [Helper Code](#helper-code) for the ffi function implementations.
 
 ## Day 5: Doesn't He Have Intern-Elves For This?
 
@@ -144,14 +119,24 @@ Using `#` to filter the list in both the vowel and bad character checks was a ni
 s:{[x] +"ii"$","\'x $[5=#x:" "\x;2 4;1 3]} / sanitise
 r:{[x;y] x+!1+y-x}                         / range
 
-f:{[x;y] $["n"=y 6;.[x;;:;1];"f"=y 6;.[x;;:;0]; .[x;;:;1 0 x . c]] c:r .'s y}
-g:{[x;y] $["n"=y 6;.[x;;+;1];"f"=y 6;.[x;;:;0|-1+x . c];.[x;;+;2]] c:r .'s y}
+f:{[x;y]
+  $["n"=y 6
+      .[x;;:;1]
+    "f"=y 6
+      .[x;;:;0]
+      .[x;;:;1 0 x . c]] c:r .'s y}
+g:{[x;y]
+  $["n"=y 6
+      .[x;;+;1]
+    "f"=y 6
+      .[x;;:;0|-1+x . c]
+      .[x;;+;2]] c:r .'s y}
 
 +/,/(1000^1000000#0)f/:i:0:"input/06.txt"
 +/,/(1000^1000000#0)g/:i
 ```
 
-I struggled with the parser during this challenge. It does not like conditional statements split over multiple lines.
+I struggled with the parser during this challenge - unlike Q, shakti treats newlines as an implicit semicolon, therefore using both will lead to problems!
 
 Other notes:
  - The use of `/:` to scan over y given x, which was just `/` in Q.
@@ -171,16 +156,21 @@ o:{[x;y;z] $[2=#,/v:g'(x;y);W[`$z]:2/|/b'v;()]} / or
 l:{[x;y;z] $[2=#,/v:g'(x;y);W[`$z]:{[x;y] 2/16 _ b[x],y#0}. v;()]} / lshift
 r:{[x;y;z] $[2=#,/v:g'(x;y);W[`$z]:{[x;y] 2/(-y) _ b x}. v;()]}    / rshift
 
-f:{[x] $[(!W)'`$*|x;();$[3=#x;w . x 0 2;4=#x;n . x 1 3;((a;o;l;r)"AOLR"?x[1;0]). x 0 2 4]]}
+f:{[x]
+  $[(!W)'`$last x                               / already solved
+      ()
+    3=#x                                        / wire
+      w . x 0 2
+    4=#x                                        / not
+      n . x 1 3
+      ((a;o;l;r)"AOLR"?x[1;0]). x 0 2 4]}
 
-W:`!0N / Wires
-{[x;y] f'x;W}[i:" "\'0:"input/07.txt"]/:0;
-A:W`a;A
+{[x;y] f'x;W}[i:" "\'0:"input/07.txt"]/:W:`!0N;
+W`a
 
-W:`!0N
-i:@[i;&(,"b")~/(*|)'i;:;,($A;"->";,"b")]
-{[x;y] f'x;W}[i]/:0;
-*W`a
+i:@[i;&(,"b")~/last'i;:;,($W`a;"->";,"b")]
+{[x;y] f'x;W}[i]/:W:`!0N;
+W`a
 ```
 
 Some challenges lend themselves to Q/K. Some do not. This is one that falls into the latter camp. There were also a number of teething problems when re-writing this in shakti:
@@ -193,10 +183,13 @@ Pain points here:
 
 ```q
 d:{[x]
-  /(count;previous;skip)
-  *(0;" ";0){[x;y]
-    c:x 0;
-    $[s:x 2;(c;y;s-1);"\\"= x 1;$[y="x";(1+x 0;y;3);(1+x 0;y;1)];(1+x 0;y;0)]}/:x}
+    *(0;" ";0){[x;y]           / (count;previous;skip)
+    c:x 0
+    $[s:x 2
+        (c;y;s-1)
+      "\\"=x 1                 / previous was an escape char
+        (1+x 0;y;$[y="x";3;1])
+        (1+x 0;y;0)]}/:x}
 
 +/{[x] (2+#x)-d x}'i:0:"input/08.txt"
 +/{[x] 2++/"\"\\"'x}'i
@@ -228,8 +221,8 @@ sw:{[x;y] (y-1)_(-y)#',\x}    / sliding window
 r:,/{[x] (`$,/'2#''x(0 2;2 0))!2#`i$x 4}'" "\'0:"input/09.txt" / routes
 c:{[x] x@k@#x}@`$?2^,/$!r                                      / combos
 
-&/t:{[x] +/r`$,/'$sw[x;2]}'c
-|/t
+min t:{[x] +/r`$,/'$sw[x;2]}'c
+max t
 ```
 
 Tables don't appear to be ready yet. Names can only be 8 characters long... So not my best work.
@@ -237,35 +230,65 @@ Tables don't appear to be ready yet. Names can only be 8 characters long... So n
 ## Day 10: Elves Look, Elves Say
 
 ```q
-#@[;39] r:(.'*0:"input/10.txt"){[x;y] ,/(1_-':i,#x),'x@i:&~~':x}\:50#0
-#*|r
+#@[;40] r:(50;{[x] ,/(1_-':i,#x),'x@i:&~~':x})\:.'*0:"input/10.txt"
+#last r
 ```
 
-A simple translation, iterating over 50 zeros as I haven't figured out how else to do it...
+A simple translation. To iterate over a function `n` times, the syntax is `(n;function)\:` - thanks to [chrispsn](https://disqus.com/by/chrispsn/) for the tip!
 
 ## Day 11: Corporate Policy
 
 ```q
 a:"abcdefghijklmnopqrstuvwxyz"
 
-n:{[x] $[0=#x;"a";"z">*|x;(-1_ x),a@1+a?*|x;(n@-1_x),"a"]} / next pass
+n:{[x]                              / generate next pass
+  $[0=#x
+      "a"
+    "z">last x
+      (-1_ x),a@1+a?last x
+      (n@-1_x),"a"]}
 
-s:{[x] (1_-':&1=-':a?x)'1}              / straight
-b:{[x] ~|/"iol"'x}                      / no bad chars
-p:{[x] 1<+/{[x] (1_-':&x)'1}'a=\x}      / pairs
+s:{[x] (1_-':&1=-':a?x)'1}          / straight
+b:{[x] ~|/"iol"'x}                  / no bad chars
+p:{[x] 1<+/{[x] (1_-':&x)'1}'a=\x}  / pairs
 
-c:{[x] $[~s x;n x;~b x;n x;~p x;n x;x]} / check pass
+c:{[x]
+  $[~s x                            / no straight
+      n x
+    ~b x                            / bad chars
+      n x
+    ~p x                            / no pairs
+      n x
+    x]}
 
 r:c/:*0:"input/11.txt";r
 c/:n r
 ```
 
-I couldn't work out how to coerce integers to longs in order to do `n:{[x] a@26\1+26/a?x}`. The rest is pretty straightforward.
+I was unable to do `n:{[x] a@26\1+26/a?x}` as this overflowed the integer type.
+
+```
+ 26/21 25 1 23 10 6 7 1    / overflows K
+319820783
+
+q)\
+  26/:21 25 1 23 10 6 7 1  / fine in Q
+176413479919
+```
+
+The rest is pretty straightforward.
 
 ## Day 12: JSAbacusFramework.io
 
 ```q
-f:{[x;y] $[`A`L'@x;,/f[;y]'x;`NA`NI`NL'@x;$[y&|/"red"~/x[];0;,/f[;y]'x[]];`I`i'@x;x;0]}
+f:{[x;y]
+  $[`A`L'@x                          / table or list
+      ,/f[;y]'x
+    `NA`NI`NL'@x                     / nested something
+      $[y&|/"red"~/x[];0;,/f[;y]'x[]]
+    `I`i'@x                          / int list or atom
+      x
+      0]}
 
 +/f[;0b] j:`json?*0:"input/12.txt"
 +/f[j;1b]
@@ -276,65 +299,119 @@ Took a bit of time to work out the various types. Haven't figured out the equiva
 ## Day 13: Knights of the Dinner Table
 
 ```q
-k:{[x](,/@\)/,\(,<<)'x=/x:!x} / from: https://groups.google.com/d/msg/shaktidb/OTsNFbAa7dI/sRmpNwYPAwAJ
 sw:{[x;y] x@(-y-1)_(!#x)+\!y} / sliding window
 
-h:,/{[x] (`$,/1#'x 0 10)!$["l"=*x 2;-;:] `i$x 3}'" "\'0:"input/13.txt"
-c:{[x] x@k@#x}                         / combos
-f:{[x] +/h`$s,|'s:,/'$sw[;2] (1+#x)#x} / solve
+c:{[x] (,/'(-1+#x;{[x;y] y,/'(y:,/(),y)_\x }[x;])/:first x),'first x} / combos
+f:{[x;y] +/y`$s,|'s:,/'$sw[x;2]} / solve
 
-|/f'c@p:`$,'?,/$!h
-|/f'c@p,`m
+max f[;h]'c p:`$,'?,/$!h:,/{[x] (`$,/1#'x 0 10)!$["l"=*x 2;-;:] `i$x 3}'" "\'0:"input/13.txt"
+max f[;h]'c p,`m
 ```
 
-This would benefit from a more simple combination generator (as sitting `` `a`b`c `` is equivalent to sitting `` `b`c`a ``). One to revisit another day.
+Fairly simple translation, but uses a dictionary for the lookup rather than a table.
 
 ## Day 14: Reindeer Olympics
+
+```q
+o:++\'{[x] {[x;y;z] 2503#(y#x),z#0}."i"$x 3 6 13}'" "\'0:"input/14.txt"
+
+max last o
+|/+/o=|/+o
+```
+
+I was having an absolute mare with the select. My Q [solution](https://github.com/mkst/aoc/blob/master/2015/14.q) is pretty straightforward, so I dropped the tables and went back to basics...
+
+This was as far as I got with the tables (first star):
 
 ```q
 o:+`n`s`t`r!+{[x] "niii"$x 0 3 6 13}'" "\'0:"input/14.txt"
 
 {[x] |/*+x[]} select (|/+\2503#,/(t#'s),r#'0) by n from o
-/ TBD
 ```
-
-:construction:
-Am having an absolute mare with the select. My Q [solution](https://github.com/mkst/aoc/blob/master/2015/14.q) is significantly simpler.
-:construction:
 
 ## Day 15: Science for Hungry People
 
 ```q
-c:{[x;y;z] $[z=#x;,x,y;,/c[;;z]'[x,/t;y-t:!1+y]]} / combos
-C:{[x;y] c[();x;y-1]}                             / wrapper
+c:{[x;y;z] $[z=#x;,x,y;,/c[;;z]'[x,/t;y-t:!1+y]]} / combo generator
 
-i:+`ing`cap`dur`fla`tex`cal!+{[x] "niiiii"$x 0 2 4 6 8 10}'" "\'0:"input/15.txt"
-r:+(*+i)!+C[100;4]
+i:{[x] "i"$@[;2 4 6 8 10]@" "\",:"_x}'0:"input/15.txt"
+s:{[x;y] (t*500=a 4;t:*/0|4#a:+/x*y)}[i;]'c[!0;100;3]
+
+max s[;1]
+max s[;0]
 ```
 
-:construction:
-No stars yet. I really struggle with tables in shakti. How to do equivalent of `1!`?
-:construction:
+I gave up with using tables for this one too and went back to basics. I had real difficulty trying to index into a keyed table as I had done with my [Q](https://github.com/mkst/aoc/blob/master/2015/15.q) solution to this challenge.
 
 ## Day 16: Aunt Sue
 
 ```q
-s:{[x] (!)."ni"$+2^@[" "\",:"_ x;2 3 4 5 6 7]}@'0:"input/16.txt"
-t:+`sue`children`cats`samoyeds`pomerani`akitas`vizslas`goldfish`trees`cars`perfumes!(,!500),500^(5000#0)
+s:{[x] (!)."ni"$+2^@[" "\",:"_ x;2 3 4 5 6 7]}'0:"input/16.txt"
+t:(+`sue!1+!#s),'{[x;y] (x!(#x)#-1),y }[c:?,/!'s;]'s
+
+first first select sue from select from (select from (select from (select from (select from (select from (select from (select from (select from (select from t where children in -1 3) where cats in -1 7) where samoyeds in -1 2) where pomeranians in -1 3) where akitas in -1 0) where vizslas in -1 0) where goldfish in -1 5) where trees in -1 3) where cars in -1 2) where perfumes in -1 1
+first first select sue from select from (select from (select from (select from (select from (select from (select from (select from (select from (select from t where children in -1 3) where (cats > 7)|cats=-1) where samoyeds in -1 2) where (pomeranians <3)|pomeranians=-1) where akitas in -1 0) where vizslas in -1 0) where (goldfish < 5)|goldfish = -1) where (trees>3)|trees=-1) where cars in -1 2) where perfumes in -1 1
 ```
 
-:construction:
-Will come back to this once I've figured out tables.
-:construction:
+Day 16 presented a number of challenges, but I stuck with tables:
+
+  - Using a dictionary of defaults gets overwritten even when using `'`, e.g.
+
+```q
+ d:{a:9;b:8;c:7} / define defaults
+ d
+`a|9
+`b|8
+`c|7
+
+ {[x;y] x,y}[d;]'({a:5};{b:3};{c:1}) / fill with defaults
+a b c
+- - -
+5 3 1
+5 3 1
+5 3 1
+
+ d / d is overwritten!
+`a|5
+`b|3
+`c|1
+```
+
+The workaround seems to be to define the defaults inside the lambda:
+
+```q
+ {[x] {a:1;b:2;c:3},x}'({a:5};{b:3};{c:1})
+a b c
+- - -
+5 2 3
+1 3 3
+1 2 1
+```
+
+  - Cannot use multiple clauses in the where statement.
+
+```q
+ select from t where goldfish < 5, trees < 3
+select from t where goldfish < 5, trees < 3
+                                 ^
+!value
+```
+
+This results in the monstrosity that is the nested `select from ..` statements.
+
+  - Nulls are different to Q, and you can't use them with `in` hence default value being `-1`.
+
+Other than that... it wasn't too bad.
 
 ## Day 17: No Such Thing as Too Much
 
 ```q
 a:"abcdefghijklmnopqrstuvwxyz"
-d:{[x;y] x@((),y)_!#x} / used to do x_/:y
+
+d:{[x;y] x y_#x} / drop
 
 b:{[x] (`$'a@!#x)!x}@|^`i$0:"input/17.txt"
-f:{[x;y;z] $[x=s:+/b@y;,y;,/f[x;;]'[y,/z w;d[z]'w:&(z>*|y)&~x<b[z]+s]]}
+f:{[x;y;z] $[x=s:+/b@y;,y;,/f[x;;]'[y,/z w;z d/w:&(z>last y)&~x<b[z]+s]]}
 
 #r:f[150;`;!b]
 -1+&/#'r
@@ -343,9 +420,9 @@ f:{[x;y;z] $[x=s:+/b@y;,y;,/f[x;;]'[y,/z w;d[z]'w:&(z>*|y)&~x<b[z]+s]]}
 Relatively straightforward, a few pain points:
 
  - Could not do `f'[a;l;l]`, had to do `f[a;;]'[l;l]`
- - `x _/: y` is gone (atom drop) hence `{[x;y] x@((),y)_!#x}`
+ - `x_/:y` is gone (atom drop), equivalent functionality is `x{[x;y] x y_#x}/y`
  - Cannot index into char dict with `""`, `()` turns into `""`, `!0` cannot be indexed into etc
- - `x>=y` does not exist hence `~x<y`
+ - `>=` does not exist hence `~x<y`
 
 ## Day 18: Like a GIF For Your Yard
 
@@ -353,11 +430,14 @@ Relatively straightforward, a few pain points:
 g:"#"=0:"input/18.txt" / grid
 c:{[x] ,/x,\/x}@!#g    / coords
 
-f:{[x;y] s:+/(`b=@)#.[x;]'y+/(0 1;1 1;1 0;1 -1;0 -1;-1 -1;-1 0;-1 1);$[.[x;y];2 3's;3=s]}
+f:{[x;y] s:+/(`b=@)#.[x;]'y+/(0 1;1 1;1 0;1 -1;0 -1;-1 -1;-1 0;-1 1)
+    $[.[x;y]
+      2 3's
+      3=s]}
 s:{[x] .[x;2#,0,-1+#x;:;1b]} / set corners
 
-+/,/g{[x;y] (#x)^f[x]'c}/:100#0
-+/,/s[g]{[x;y] s(#x)^f[x]'c}/:100#0
++/,/(100;{[x]  (#x)^f[x]'c})/:g
++/,/(100;{[x] s(#x)^f[x]'c})/:s g
 ```
 
 Only notable pain point here is the `` `!length `` error when indexing outside the grid, hence `` (`b=@)# `` to filter only boolean types.
@@ -376,35 +456,69 @@ s:{[x] `$(&"ABCDEFGHIJKLMNOPQRSTUVWXYZ"'x)^x}@m:*|i
 
 r:|'r@>#'r[;1] / arrange largest transformations first
 
-f:{[x]
-  / (molecule;transformations)
-  m:*p:*x;
-  t:*|p;
-  $[m~1#"e";,p;(+(ssr[m;;].'r@w;t+c w:&0<c:#'ss[m;]'*'r)),1_x]}
+f:{[x] / (molecule;transformations)
+  m:*p:*x
+  t:*|p
+  $[m~1#"e" / reached the end!
+    ,p
+    (+(ssr[m;;].'r@w;t+c w:&0<c:#'ss[m;]'*'r)),1_x]}
 
-*|*f/:(,(m;0))
+last first f/:(,(m;0))
 ```
 
 Part 1 was straightforward. I wrote `ss` (after a glimpse of John's [example](https://estradajke.github.io/k9-simples/k9/Examples.html)) to help with Part 2 (the `ssr` is a simplified version from Q).
 
-I had started with a recursive approach for Part 2 but haven't worked out a way to stop recursing without using a global variable as a flag, so stuck with iteration:
+I had started with a recursive approach for Part 2 but haven't worked out a way to stop recursing without using a global variable as a flag, so stuck with iteration.
+
+Recursive approach with global variable:
 
 ```q
 f2:{[x;y;z] $[D[`FOUND]|x~1#"e";(D[`FOUND]:1b;z);,/f2[;y;]'[ssr[x;;].'y@w;z+c w:&0<c:#'ss[x;]'*'y]]}
 D:{FOUND:0b}; *1_f2[m;r;0] / how to set a global within a function?
 ```
 
+I came back to this later and wrote `ss` in both C and Rust. It is significantly (100x) faster than my K implementation.
+
+```rust
+// continuation of aoc.rs ...
+
+#[no_mangle]
+pub extern "C" fn ss(h: *const c_char, n: *const c_char) -> *mut u32 {
+    let p;
+    unsafe {
+        let hs = CStr::from_ptr(h).to_str().expect("fail");
+        let ns = CStr::from_ptr(n).to_str().expect("fail");
+        let v: Vec<_> = hs.match_indices(ns).collect();
+        p = k('I' as c_char, v.len() as u64);
+        for i in 0..v.len() {
+            ptr::write(p.add(i), v[i].0 as u32);
+        }
+    }
+    return p;
+}
+```
+
+Timing comparison:
+
+```q
+\t:1000 ss[m]'r[;0] / this is the k code
+2788
+
+\t:1000 ss[m]'r[;0] / this is the c code
+25
+```
+
 ## Day 20: Infinite Elves and Infinite Houses
 
 ```k
-d:{[x] ?f,(f:r@&0=(r:1+!_ sqrt x) mod'x) div'x} / distinct factors
+d:{[x] ?`i f,x%(f:r@&d=_d:x%r:1+!_sqrt x)} / distinct factors
 f:{[x;y] +/r@&~(x%y)>r:d x}
 
-{[x;y] $[x<+/d y;y;y+1]}[.1*i:`i$*0:"input/20.txt"]/:1
-{[x;y;z] $[x<f[z;y];z;z+1]}[i%11;50]/:1
+({[x;y] x>+/d y}[.1*i:`i$*0:"input/20.txt"];1+)/:0
+({[x;y;z] x>f[z;y]}[i%11;50];1+)/:0
 ```
 
-Too slow. Way too slow. `mod` and `div` are used with `'` as they do not support `y` being a list:
+Found out that `mod` and `div` do not support `y` being a list:
 
 ```
 1 2 3 4 5 mod 20
@@ -412,82 +526,206 @@ Too slow. Way too slow. `mod` and `div` are used with `'` as they do not support
 !type
 ```
 
-Example of timings:
+...which made the initial solution incredibly slow as I had to do `div'x` and `mod'x`... So rewrote to use `%` and the solution runs almost twice as fast as the original Q version:
 
-`K4`:
-```
-q)\t (1+)/[{ x > sum d y}[1000000];1]
-1052
-```
-`K9`:
-```
-\t {[x;y] $[x<+/d y;y;y+1]}[1000000]/:1
-19300
-```
+```sh
+$ time k 20.k </dev/null
+831600
+884520
 
-Other than catering for `div` and `mod`, this was pretty much a 1:1 copy.
+real	0m6.352s
+user	0m6.347s
+sys	0m0.004s
+
+$ time q 20.q </dev/null
+2020.07.03D08:13:16.207996000	LDN	:/home/mark/github/perch/code/kdb/lib/q/q.q
+
+831600
+884520
+
+real	0m10.561s
+user	0m10.549s
+sys	0m0.011s
+
+```
 
 ## Day 21: RPG Simulator 20XX
 
-:construction:
-My least favourite challenge of AoC 2015... will come back when I have figured out tables.
-:construction:
+```q
+W:`Dagger`Shortsword`Warhammer`Longsword`Greataxe
+A:`Leather`Chainmail`Splintmail`Bandedmail`Platemail`NoArmour
+R:`Damage1`Damage2`Damage3`Armor1`Armor2`Armor3`NoRing`NoRing2
+I:+`Name`Cost`Damage`Armor!(W,A,R;8 10 25 40 74,13 31 53 75 102 0,25 50 100 20 40 80 0 0;4 5 6 7 8, 0 0 0 0 0 0, 1 2 3 0 0 0 0 0;0 0 0 0 0, 1 2 3 4 5 0, 0 0 0 1 2 3 0 0)
+
+Rc:R@?^'{[x] ,/{[x;y] y,'((),y)_x}[x;]'x}@!#R / unique ring combinations
+
+cross:{[x;y] ,/x,\/y}
+c:cross[cross[W;A];Rc] / all item combinations
+
+A:()!()
+ct:{[x]
+  A[`L]:x / global var hack
+  s:select from I where Name in A[`L]
+  select sum Cost, sum Armor, sum Damage from s}'c
+ct:ct@<*+`Cost#ct / sort by ascending cost
+
+e:"i"$last'" "\'0:"input/21.txt" / enemy (hp;damage;armor)
+
+t:{[x] d:last x;$[|/0>*'x;x;(d-(1|a[1]-d 2;0;0);a:*x)]} / take turn
+g:{[x;y] ~2 mod#t\:(x;y)}[;e]'100,'.'`Damage`Armor#ct / player has 100 hp
+
+*`Cost#ct@*&g     / cheapest win
+*`Cost#ct@last&~g / priciest loss
+```
+
+That is a huge amount of setup. Two issues I faced with tables:
+
+1. Cannot reference local variables in `select` statement, hence assignment to global `A` dict)
+2. Could not do `select sum Cost ..` with `where` clause, hence assignment to `s:` and selecting sums from that.
+
+```q
+ select sum Cost from I where Name in `Dagger`Leather`Armor1`Armor2
+select sum Cost from I where Name in `Dagger`Leather`Armor1`Armor2
+^
+!class
+/ two-step works
+s:select from I where Name in `Dagger`Leather`Armor1`Armor2
+select sum Cost from s
+{Cost:81}
+```
 
 ## Day 22: Wizard Simulator 20XX
 
-:construction:
-... I stand corrected. So much boilerplate to get to the meat of the problem.
-:construction:
+```q
+Spells:+`Name`Cost`Turns`Damage`Heal`Mana!(`MagicMissile`Drain`Shield`Poison`Recharge
+    53 73 113 173 229 / Cost
+    1 1 6 6 5         / Turns
+    4 2 0 3 0         / Damage
+    0 2 0 0 0         / Heal
+    0 0 0 0 101)      / Mana Boost
+
+D:()!() // hack
+
+turn:{[P;E;A;S;H]
+  / hard mode
+  $[H;P[`hp]-:1;()]
+  d:1>P[`hp]
+
+  / === PLAYER TURN ===
+  / cast new spell
+  D[`spell]:S
+  A,:s:select from Spells where Name=D`spell
+  P[`mana]-:first first select Cost from s
+  / apply active spells
+  a:select from A where Turns > 0
+  E[`hp]-:first select sum Damage from a
+  P[`hp]+:first select sum Heal from a
+  P[`mana]+:first select sum Mana from a
+  / reduce turns
+  A:select Name, Cost, Turns-1, Damage, Heal, Mana from A
+
+  / === ENEMY TURN ===
+  / apply active spells
+  a:select from A where Turns > 0
+  E[`hp]-:first select sum Damage from a
+  P[`mana]+:first select sum Mana from a
+  / active shield?
+  P[`hp]-:1|E[`damage] - $[#select from a where Name=`Shield;7;0]
+  / reduce turns
+  A:select Name, Cost, Turns-1, Damage, Heal, Mana from A
+  / active spells
+  D[`active]:*+`Name#select from A where Turns > 0
+  D[`mana]:P[`mana]
+  / available spells
+  as:select from Spells where ~Name in D`active
+  as:*+`Name#select from as where ~Cost > D`mana
+
+  / return; 1=victory, 0=loss, -1=continue
+  $[(~d)&1>E`hp
+      (1;*+select sum Cost from A)
+    d|1>P`hp
+      (0;0)
+      (-1;(P;E;A),/as)]}
+
+f:{[x;y]
+  b:first x  / best cost
+  q:last x   / remaining queue
+  i:first q  / pop
+  a:i 2      / active spells
+
+  $[0=#q
+      (b;q)
+    b<*+select sum Cost from a
+      (b;1 _ q)
+    1=first res:turn . i,y
+      (b&res 1;1 _ q)
+    0=first res
+      (b;1 _ q)
+      (b;res[1],1 _ q)]}
+
+e:`hp`damage!"i"$last'" "\'0:"input/22.txt"
+
+first f[;0b]/:(0w;s:({hp:50;mana:500};e;0#Spells),/*+`Name#Spells)
+first f[;1b]/:(0w;s)
+```
+
+Diabolical. Definitely my least favourite challenge of AoC 2015. So much code and most of it terrible. I have already rewritten it once.
+
+K9-wise the pain points are mostly around tables:
+
+  - Cannot do `update .. from`
+  - Cannot do `select x .. where ..`
+  - Cannot reference local variable in `where` clause
+
+Other pain points:
+
+  - No `if` statement, so weird `$[cond;true;no-op]`
+  - No early-return from functions
+  - No `[]` in condition, leading to funky statements
 
 ## Day 23: Opening the Turing Lock
 
 ```q
 f:{[x;y]
   a:y 0;b:y 1;i:x pc:y 2;
-  $["hlf"~i 0;$["a"=*i 1;.5 1 1;1 .5 1]*(a;b;pc+1);"tpl"~i 0;$["a"=*i 1;3 1 1;1 3 1]*(a;b;pc+1);"inc"~i 0;$["a"=*i 1;1 0 1;0 1 1]+(a;b;pc);"jmp"~i 0;(a;b;pc+`i$i 1);"jie"~i 0;(a;b;pc+$[0=2 mod _y@"ab"?*i 1;`i$i 2;1]);"jio"~i 0;(a;b;pc+$[1=y@"ab"?*i 1;`i$i 2;1]);(a;b;pc)]}
+  $["hlf"~i 0
+      $["a"=*i 1;.5 1 1;1 .5 1]*(a;b;pc+1)
+    "tpl"~i 0
+      $["a"=*i 1;3 1 1;1 3 1]*(a;b;pc+1)
+    "inc"~i 0
+      $["a"=*i 1;1 0 1;0 1 1]+(a;b;pc)
+    "jmp"~i 0
+      (a;b;pc+`i$i 1)
+    "jie"~i 0
+      (a;b;pc+$[0=2 mod _y@"ab"?*i 1;`i$i 2;1])
+    "jio"~i 0
+      (a;b;pc+$[1=y@"ab"?*i 1;`i$i 2;1])
+      (a;b;pc)]}
 
 @[;1]@ f[p:{[x] " "\",+"_x}'0:"input/23.txt"]/:0 0 0
 @[;1]@ f[p]/:1 0 0
 ```
 
-My complaint about the parser still holds, the conditional should be broken over several lines for readability...
-
-Other pain points:
+Fairly straightforward translation here, couple of pain points:
   - `,0b` is treated as *true* rather than `'type` which threw me slightly when I was debugging.
   - `` `i$"+123" `` comes out as `0` rather than `123`, not a huge deal but different to Q.
-
 
 ## Day 24: It Hangs in the Balance
 
 ```q
-d:{[x;y] x@((),y)_!#x} / drop
+d:{[x;y] x y_#x} / drop
 
-f:{[x;y;z] $[x=s:+/y;,y;,/f[x;;]'[y,/z w;d[z]'w:&(z<*|y)&~x<z+s]]}
+f:{[x;y;z]
+    $[x=s:+/y
+      ,y
+      ,/f[x;;]'[y,/z w;z d/w:&(z<*|y)&~x<z+s]]}
 m:{[x] &/*/'x@&c=&/c:#'x}
 
 m f[3 div +/i;1#i;] 1_i:|^`i$0:"input/24.txt"
 m f[4 div +/i;1#i;] 1_i
 ```
 
-Near carbon copy, similar to `Day 17` with the `f[]'[]`. Twice as slow as Q though:
-
-```sh
-$ time k 24.k </dev/null
-10439961859j
-72050269
-
-real	0m10.245s
-user	0m10.241s
-sys	0m0.004s
-
-$ time q 24.q </dev/null
-10439961859
-72050269
-
-real	0m5.672s
-user	0m5.665s
-sys	0m0.006s
-```
+Near carbon copy, similar to `Day 17` with the `f[]'[]`.
 
 ## Day 25: Let It Snow
 
@@ -495,7 +733,193 @@ sys	0m0.006s
 i:{[x] `i$(" "\",."_x) 16 18}@*0:"input/25.txt"
 n:{[x;y;z] x++/y+1+!z-1}[1++/!*i;;] . i
 
-20151125{[x;y] 33554393 mod 252533*x}/:(n-1)#0
+(n-1;{[x] 33554393 mod 252533*x})/:20151125
 ```
 
-Still don't know how to iterate `n` times, so we take 18+ million zeroes and iterate over them instead...
+Nothing special here, uses the new iteration format, otherwise just a copy of Q.
+
+
+## Solution Comparison
+
+```sh
+for f in *.q; do /usr/bin/time --format "%C,%e,%M" q $f -s 4 </dev/null >/dev/null; done
+for f in *.k; do /usr/bin/time --format "%C,%e,%M" k $f      </dev/null >/dev/null; done
+```
+
+This is not by any means a scientific comparison; no comparisons should be drawn:
+  - The solutions are different!
+  - 4 threads were available to Q
+
+It's purely for me to determine whether I should look for a more efficient algorithm to solve the challenge.
+
+<div id="performance-plot-cpu"></div>
+<div id="performance-plot-mem"></div>
+
+<script>
+function plot_performance() {
+  d3.csv('/assets/data/2015.csv', (x) => {
+      const cpu = []
+      const mem = []
+
+      const k = x.filter(x => x.proc == 'k')
+      const q = x.filter(x => x.proc == 'q')
+
+      l = (x, y, z, c) => ({ x: x.map(x => 'Day ' + x.day), y: x.map(x => parseFloat(x[y])), name: z, type: 'bar', marker: { color: c } })
+
+      cpu.push(l(k, 'cpu', 'k', '#f7da43'))
+      cpu.push(l(q, 'cpu', 'q', '#0070cd'))
+
+      mem.push(l(k, 'mem', 'k', '#f7da43'))
+      mem.push(l(q, 'mem', 'q', '#0070cd'))
+
+      const layout_mem = {
+        title: 'Memory',
+        yaxis: {
+          title:'Maximum resident, Kilobytes',
+        },
+        legend: {
+          orientation: 'h',
+          xanchor: 'center',
+          x: 0.5
+        },
+        margin: {
+          l: 50,
+          r: 20,
+          b: 60,
+          t: 30,
+          pad: 6
+        }
+      }
+
+      const layout_cpu = {
+        title: 'CPU',
+        yaxis: {
+          title:'Wall clock, seconds',
+        },
+        legend: {
+          orientation: 'h',
+          xanchor: 'center',
+          x: 0.5
+        },
+        margin: {
+          l: 50,
+          r: 20,
+          b: 60,
+          t: 30,
+          pad: 6
+        }
+      }
+
+      Plotly.newPlot("performance-plot-cpu", cpu, layout_cpu)
+      Plotly.newPlot("performance-plot-mem", mem, layout_mem)
+    })
+}
+</script>
+
+
+## Helper Code
+
+### aoc.c
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <openssl/md5.h>
+
+#include "k.h"
+
+// gcc aoc.c -shared -lcrypto -fPIC -o aoc.so -std=c99
+
+// md5C:*"../src/aoc.so"2:`md5!1
+// md5:{[x] `c md5C x,0x0}
+K md5(const S x)
+{
+  unsigned char digest[16];
+  MD5((const unsigned char*)x, strlen(x), digest);
+  K d = k((S)'I', 16);
+  for (U i = 0; i < 16; i++)
+  {
+    ((I*)d)[i] = digest[i];
+  }
+  return d;
+}
+
+//ssC:*"../src/aoc.so"2:`ss!2
+//ss:{[x;y] (),ssC[x,0x0;y,0x0]}
+K ss(const S x, const S y)
+{
+  I lx = strlen(x);
+  I ly = strlen(y);
+
+  if (lx == 0 || ly == 0)
+  {
+    return k((S)'I', 0);
+  }
+
+  const char *ptr = x;
+  const char *p_idx = ptr;
+
+  I *tmp = (I*) malloc((lx / ly) * sizeof(I));
+  I fnd = 0;
+
+  while ((ptr = strstr(ptr, y)) != NULL)
+  {
+    ((I*)tmp)[fnd++] = ptr - p_idx;
+    ptr = ptr + ly * sizeof(char);
+  }
+  K r = k((S)'I', fnd);
+  for (int i = 0; i < fnd; i++)
+  {
+    ((I*)r)[i] = tmp[i];
+  }
+  free(tmp);
+
+  return r;
+}
+```
+
+### aoc.rs
+
+```rs
+use std::ffi::CStr;
+use std::os::raw::c_char;
+use std::ptr;
+
+extern "C" {
+    fn k(t: c_char, l: u64) -> *mut u32;
+}
+
+// md5C:*"../rs/target/libaoc.so"2:`md5!1
+// md5:{[x] `c md5C x,0x0}
+#[no_mangle]
+pub extern "C" fn md5(s: *const c_char) -> *mut u32 {
+    let p;
+    unsafe {
+        let digest = md5::compute(CStr::from_ptr(s).to_bytes());
+        p = k('I' as c_char, 16);
+        for i in 0..16 {
+            ptr::write(p.add(i), digest[i].into())
+        }
+    }
+    return p
+}
+
+// ssC:*"../rs/target/release/libaoc.so"2:`ss!2
+// ss:{[x;y] (),ssC[x,0x0;y,0x0]}
+#[no_mangle]
+pub extern "C" fn ss(h: *const c_char, n: *const c_char) -> *mut u32 {
+    let p;
+    unsafe {
+        let hs = CStr::from_ptr(h).to_str().expect("fail");
+        let ns = CStr::from_ptr(n).to_str().expect("fail");
+        let v: Vec<_> = hs.match_indices(ns).collect();
+        p = k('I' as c_char, v.len() as u64);
+        for i in 0..v.len() {
+            ptr::write(p.add(i), v[i].0 as u32)
+        }
+    }
+    return p
+}
+```
