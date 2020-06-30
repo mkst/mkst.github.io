@@ -4,7 +4,7 @@ title:  ":christmas_tree: Advent of Code 2017, Day 08: I Heard You Like Register
 date:   2018-01-13 08:00:00 +0000
 last_updated: 2018-01-13
 categories: aoc tutorial
-onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/08.q', 'solution')
+onload: fetch('https://raw.githubusercontent.com/mkst/aoc/master/2017/08.q', 'solution')
 ---
 
 # Day 8: I Heard You Like Registers

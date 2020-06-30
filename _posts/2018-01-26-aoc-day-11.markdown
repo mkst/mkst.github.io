@@ -4,7 +4,7 @@ title:  ":christmas_tree: Advent of Code 2017, Day 11: Hex Ed"
 date:   2018-01-26 08:00:00 +0000
 last_updated: 2018-01-26
 categories: aoc tutorial
-onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/11.q', 'solution')
+onload: fetch('https://raw.githubusercontent.com/mkst/aoc/master/2017/11.q', 'solution')
 ---
 
 # Day 11: Hex Ed

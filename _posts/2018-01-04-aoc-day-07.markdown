@@ -4,7 +4,7 @@ title:  ":christmas_tree: Advent of Code 2017, Day 07: Recursive Circus"
 date:   2018-01-04 08:00:00 +0000
 last_updated: 2018-01-10
 categories: aoc tutorial
-onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/07.q', 'solution')
+onload: fetch('https://raw.githubusercontent.com/mkst/aoc/master/2017/07.q', 'solution')
 ---
 
 # Day 7: Recursive Circus

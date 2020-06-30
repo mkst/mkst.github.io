@@ -8,9 +8,9 @@ categories: shakti
 
 # Introduction
 
-This is my attempt to solve AoC 2015 using [shakti](https://www.shakti.com). It's a work-in-progress. The goal is for me to learn k9 and to have idiomatic solutions, not necessarily to just golf the solutions into oblivion. Comments and criticism are encouraged.
+This is my attempt to solve [AoC 2015](https://adventofcode.com/2015/) using [shakti](https://www.shakti.com). It's a work-in-progress. The goal is for me to learn k9 and to have idiomatic solutions, not necessarily to just golf the solutions into oblivion. Comments and criticism are encouraged.
 
-With thanks to [John Estrada](https://estradajke.github.io/k9-simples/k9/index.html) for his k9 manual.
+With thanks to [John Estrada](https://estradajke.github.io/k9-simples/k9/index.html) for his k9 manual, and [Eric Wastl](https://twitter.com/ericwastl) for creating the Advent of Code itself.
 
 # Contents
 
@@ -76,15 +76,15 @@ So far, so straightforward. `2^` (2 cut) replaces `0N 2#`.
 
 ## Day 4: The Ideal Stocking Stuffer
 
-There is no built-in MD5 in shakti, so this uses the ffi interface.
+There is no built-in MD5 in shakti, so this uses the ffi interface, `2:`.
 
 ```q
 md5:*"../src/aoc.so"2:`md5!1
 
-f:{[x;y;z] $[(y#"0")~y#md5 x,$z;z;z+1]}[*0:"input/04.txt";]
+f:{[x;y;z] $[y<256/3#md5 x,$z;z+1;z]}[*0:"input/04.txt";]
 
-f[5]/:1
-f[6]/:1
+f[16]/:1
+f[0]/:1
 ```
 
 C code, `aoc.c`:
@@ -96,14 +96,13 @@ C code, `aoc.c`:
 
 #include "k.h"
 
-// gcc -shared -o aoc.so -lcrypto -fPIC ./aoc.c
+// gcc aoc.c -shared -lcrypto -fPIC -o aoc.so
 
 // md5:*"./aoc.so"2:`md5!1
-K md5(S x)
+K md5(const S x)
 {
   unsigned int MD5_HASH_LENGTH = 16;
   unsigned char digest[MD5_HASH_LENGTH];
-  char out[1+2*MD5_HASH_LENGTH];
 
   EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
   EVP_MD_CTX_init(mdctx);
@@ -112,12 +111,12 @@ K md5(S x)
   EVP_DigestFinal(mdctx, digest, &MD5_HASH_LENGTH);
   EVP_MD_CTX_free(mdctx);
 
+  K out = k((S)'I', MD5_HASH_LENGTH);
   for (int i = 0; i < 16; i++)
   {
-    sprintf(out + (i*2), "%02x", digest[i]);
+    ((I*)out)[i] = (unsigned char) digest[i];
   }
-
-  return k((S)'s', (U)out);
+  return out;
 }
 ```
 
@@ -203,7 +202,7 @@ d:{[x]
 +/{[x] 2++/"\"\\"'x}'i
 ```
 
-Lack of `ssr` meant I relied on my [go](https://github.com/streetster/aoc/blob/master/2015/08.go) approach for Part 1.
+Lack of `ssr` meant I relied on my [go](https://github.com/mkst/aoc/blob/master/2015/08.go) approach for Part 1.
 
 Also it's interesting to note that if you place an int to the left of `+/` it does not get treated as the starting value as it does in Q:
 
@@ -300,7 +299,7 @@ o:+`n`s`t`r!+{[x] "niii"$x 0 3 6 13}'" "\'0:"input/14.txt"
 ```
 
 :construction:
-Am having an absolute mare with the select. My Q [solution](https://github.com/streetster/aoc/blob/master/2015/14.q) is significantly simpler.
+Am having an absolute mare with the select. My Q [solution](https://github.com/mkst/aoc/blob/master/2015/14.q) is significantly simpler.
 :construction:
 
 ## Day 15: Science for Hungry People

@@ -4,7 +4,7 @@ title:  ":christmas_tree: Advent of Code 2017, Day 09: Stream Processing"
 date:   2018-01-16 08:00:00 +0000
 last_updated: 2018-01-16
 categories: aoc tutorial
-onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/09.q', 'solution')
+onload: fetch('https://raw.githubusercontent.com/mkst/aoc/master/2017/09.q', 'solution')
 ---
 
 # Day 9: Stream Processing

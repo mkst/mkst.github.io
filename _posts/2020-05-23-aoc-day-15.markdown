@@ -4,7 +4,7 @@ title:  ":christmas_tree: Advent of Code 2017, Day 15: Dueling Generators"
 date:   2020-05-23 08:00:00 +0000
 last_updated: 2020-05-23
 categories: aoc tutorial
-onload: fetch('https://raw.githubusercontent.com/streetster/aoc/master/2017/15.q', 'solution')
+onload: fetch('https://raw.githubusercontent.com/mkst/aoc/master/2017/15.q', 'solution')
 ---
 
 # Day 15: Dueling Generators
